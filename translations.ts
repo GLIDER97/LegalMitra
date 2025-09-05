@@ -39,23 +39,41 @@ const commonTranslations = {
         zh: '正在分析文档...',
     },
     // Errors
-    error_file_parse: {
-        en: 'We could not understand this file. It might be empty, corrupted, or in a format we cannot read.',
-        es: 'No pudimos entender este archivo. Podría estar vacío, dañado o en un formato que no podemos leer.',
-        ar: 'لم نتمكن من فهم هذا الملف. قد يكون فارغًا أو تالفًا أو بتنسيق لا يمكننا قراءته.',
-        zh: '我们无法理解此文件。它可能为空、已损坏或格式无法读取。',
+    error_file_parse_title: {
+        en: "File Reading Error",
+        es: "Error al Leer el Archivo",
+        ar: "خطأ في قراءة الملف",
+        zh: "文件读取错误",
     },
-    error_empty_document: {
-        en: 'Please upload or paste a document to analyze.',
-        es: 'Por favor, suba o pegue un documento para analizar.',
-        ar: 'يرجى تحميل أو لصق مستند لتحليله.',
-        zh: '请上传或粘贴要分析的文档。',
+    error_file_parse_message: {
+        en: "We had trouble reading your file. Please ensure it's a valid, uncorrupted PDF, Word, or text document and try uploading it again.",
+        es: "Tuvimos problemas para leer tu archivo. Asegúrate de que sea un documento PDF, Word o de texto válido, no corrupto, e intenta subirlo de nuevo.",
+        ar: "واجهتنا مشكلة في قراءة ملفك. يرجى التأكد من أنه مستند PDF أو Word أو نصي صالح وغير تالف وحاول تحميله مرة أخرى.",
+        zh: "我们无法读取您的文件。请确保它是一个有效的、未损坏的 PDF、Word 或文本文档，然后重试上传。",
     },
-    error_analysis: {
-        en: 'An unexpected error occurred during analysis.',
-        es: 'Ocurrió un error inesperado durante el análisis.',
-        ar: 'حدث خطأ غير متوقع أثناء التحليل.',
-        zh: '分析期间发生意外错误。',
+    error_empty_document_title: {
+        en: "Empty Document",
+        es: "Documento Vacío",
+        ar: "مستند فارغ",
+        zh: "空文档",
+    },
+    error_empty_document_message: {
+        en: "There's nothing to analyze. Please upload a file or paste text into the box to get started.",
+        es: "No hay nada que analizar. Por favor, sube un archivo o pega texto en el cuadro para comenzar.",
+        ar: "لا يوجد شيء لتحليله. يرجى تحميل ملف أو لصق نص في المربع للبدء.",
+        zh: "没有可分析的内容。请上传文件或将文本粘贴到框中以开始。",
+    },
+    error_analysis_title: {
+        en: "Analysis Failed",
+        es: "Falló el Análisis",
+        ar: "فشل التحليل",
+        zh: "分析失败",
+    },
+    error_analysis_message: {
+        en: "The AI was unable to process the document. This can sometimes happen due to high traffic or an unusual document structure. Please try again in a moment.",
+        es: "La IA no pudo procesar el documento. Esto puede ocurrir a veces debido a un alto tráfico o a una estructura inusual del documento. Por favor, inténtalo de nuevo en un momento.",
+        ar: "لم يتمكن الذكاء الاصطناعي من معالجة المستند. قد يحدث هذا أحيانًا بسبب حركة المرور العالية أو بنية المستند غير العادية. يرجى المحاولة مرة أخرى بعد لحظات.",
+        zh: "AI 无法处理该文档。这有时可能是由于流量过大或文档结构异常造成的。请稍后重试。",
     },
     // Report
     report_title: {
@@ -149,12 +167,29 @@ const commonTranslations = {
         zh: '未发现具体的可谈判要点。',
     },
     // PDF
-    pdf_title: { en: 'LegalMitra Document Analysis Report', es: 'Informe de Análisis de Documentos de LegalMitra', ar: 'تقرير تحليل مستندات LegalMitra', zh: 'LegalMitra 文档分析报告'},
+    pdf_analysis_by: {
+        en: 'Analysis by LegalMitra',
+        es: 'Análisis por LegalMitra',
+        ar: 'تحليل بواسطة LegalMitra',
+        zh: '由 LegalMitra 分析',
+    },
     pdf_generated_on: { en: 'Generated on', es: 'Generado el', ar: 'تم إنشاؤه في', zh: '生成于'},
     pdf_summary_title: { en: 'Executive Summary', es: 'Resumen Ejecutivo', ar: 'ملخص تنفيذي', zh: '执行摘要'},
     pdf_page: { en: 'Page', es: 'Página', ar: 'صفحة', zh: '页'},
     pdf_of: { en: 'of', es: 'de', ar: 'من', zh: '之'},
     pdf_footer_disclaimer: { en: 'Disclaimer: This is an AI-generated analysis and does not constitute legal advice.', es: 'Descargo de responsabilidad: Este es un análisis generado por IA y no constituye asesoramiento legal.', ar: 'إخلاء مسؤولية: هذا تحليل تم إنشاؤه بواسطة الذكاء الاصطناعي ولا يشكل استشارة قانونية.', zh: '免责声明：这是由人工智能生成的分析，不构成法律建议。'},
+    pdf_footer_cta_prefix: {
+        en: 'For Free Contract Analysis Use ',
+        es: 'Para Análisis de Contratos Gratis, use ',
+        ar: 'لتحليل العقود مجانًا، استخدم ',
+        zh: '免费合同分析请使用 ',
+    },
+    pdf_footer_cta_link: {
+        en: 'LegalMitra.app',
+        es: 'LegalMitra.app',
+        ar: 'LegalMitra.app',
+        zh: 'LegalMitra.app',
+    },
 };
 
 const emotionalCopy = {
@@ -307,6 +342,12 @@ const emotionalCopy = {
         es: "Comienza tu análisis",
         ar: "ابدأ تحليلك",
         zh: "开始您的分析",
+    },
+    feedback_button_tooltip: {
+        en: "Provide Feedback",
+        es: "Enviar Comentarios",
+        ar: "تقديم ملاحظات",
+        zh: "提供反馈"
     },
 };
 

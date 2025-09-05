@@ -15,10 +15,17 @@ import { TrustAndCredibility } from './components/Chatbot';
 import { Testimonials } from './components/Testimonials';
 import { UseCases } from './components/UseCases';
 import { FAQ } from './components/FAQ';
+import { FeedbackButton } from './components/FeedbackButton';
+import { AlertTriangleIcon } from './components/Icons';
 
 
 const PDF_WORKER_URL = 'https://aistudiocdn.com/pdfjs-dist@^4.4.170/build/pdf.worker.min.mjs';
 pdfjsLib.GlobalWorkerOptions.workerSrc = PDF_WORKER_URL;
+
+interface AppError {
+  title: string;
+  message: string;
+}
 
 const App: React.FC = () => {
   const { t } = useTranslations();
@@ -27,7 +34,7 @@ const App: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isParsing, setIsParsing] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   const [fileName, setFileName] = useState<string>('');
   
   const handleFile = useCallback(async (file: File) => {
@@ -70,7 +77,10 @@ const App: React.FC = () => {
       setDocumentText(text);
     } catch (e) {
       console.error('Error parsing file:', e);
-      setError(t('error_file_parse'));
+      setError({
+        title: t('error_file_parse_title'),
+        message: t('error_file_parse_message')
+      });
     } finally {
       setIsParsing(false);
     }
@@ -79,7 +89,10 @@ const App: React.FC = () => {
 
   const handleAnalyze = useCallback(async () => {
     if (!documentText.trim()) {
-      setError(t('error_empty_document'));
+      setError({
+        title: t('error_empty_document_title'),
+        message: t('error_empty_document_message')
+      });
       return;
     }
     setIsLoading(true);
@@ -95,7 +108,10 @@ const App: React.FC = () => {
       setAnalysisResult(result);
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : t('error_analysis'));
+      setError({
+        title: t('error_analysis_title'),
+        message: t('error_analysis_message')
+      });
     } finally {
       setIsLoading(false);
     }
@@ -140,14 +156,19 @@ const App: React.FC = () => {
               </div>
             )}
             {error && (
-                <div className="mt-6 p-4 bg-red-900/50 border border-red-700 text-red-300 rounded-lg flex items-center gap-3 max-w-4xl mx-auto">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-                <p>{error}</p>
+                <div className="mt-6 p-4 bg-red-900/50 border border-red-700 text-red-300 rounded-lg flex items-start gap-4 max-w-4xl mx-auto">
+                    <div className="flex-shrink-0 pt-0.5">
+                        <AlertTriangleIcon className="h-6 w-6 text-red-400" />
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-red-200">{error.title}</h4>
+                        <p className="mt-1">{error.message}</p>
+                    </div>
                 </div>
             )}
             {analysisResult && !isLoading && !isParsing && (
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <AnalysisReport result={analysisResult} />
+                    <AnalysisReport result={analysisResult} fileName={fileName} />
                 </div>
             )}
         </div>
@@ -162,6 +183,7 @@ const App: React.FC = () => {
       </main>
       <Footer />
       <LanguageSwitcher />
+      <FeedbackButton />
     </div>
   );
 };

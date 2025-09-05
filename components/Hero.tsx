@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslations } from '../hooks/useTranslations';
-import { UploadIcon, DocumentTextIcon } from './Icons';
+import { UploadIcon, DocumentTextIcon, SpinnerIcon } from './Icons';
 
 interface HeroProps {
   documentText: string;
@@ -77,12 +77,21 @@ export const Hero: React.FC<HeroProps> = ({
                 onDrop={handleDrop}
               >
                 <input id="file-upload" type="file" className="sr-only" accept=".txt,.pdf,.docx,.rtf" onChange={handleFileChange} disabled={isParsing || isLoading}/>
-                <label htmlFor="file-upload" className="cursor-pointer">
+                <label htmlFor="file-upload" className={isParsing ? "cursor-wait" : "cursor-pointer"}>
                     <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-brand-gold/10">
-                      <UploadIcon className="h-6 w-6 text-brand-gold" />
+                      {isParsing ? (
+                        <SpinnerIcon className="h-6 w-6 text-brand-gold animate-spin" />
+                      ) : (
+                        <UploadIcon className="h-6 w-6 text-brand-gold" />
+                      )}
                     </div>
-                    <span className="mt-4 block text-base font-semibold text-brand-light">{t('upload_cta')}</span>
-                    <span className="mt-1 block text-sm text-gray-400">{t('upload_supported_files')}</span>
+                    <span className="mt-4 block text-base font-semibold text-brand-light">
+                        {isParsing ? t('loader_parsing') : t('upload_cta')}
+                    </span>
+                    <span className="mt-1 block text-sm text-gray-400">
+                        {/* Use a non-breaking space to maintain height during parsing */}
+                        {isParsing ? '\u00A0' : t('upload_supported_files')}
+                    </span>
                 </label>
               </div>
 
@@ -120,7 +129,11 @@ export const Hero: React.FC<HeroProps> = ({
                   disabled={isParsing || isLoading || !documentText.trim()}
                   className="w-full inline-flex items-center justify-center px-6 py-4 border border-transparent text-base font-medium rounded-md shadow-sm text-brand-dark bg-brand-gold hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-gold disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
                 >
-                  <DocumentTextIcon className="h-5 w-5 mr-3" />
+                  {isLoading ? (
+                    <SpinnerIcon className="h-5 w-5 mr-3 animate-spin" />
+                  ) : (
+                    <DocumentTextIcon className="h-5 w-5 mr-3" />
+                  )}
                   {isParsing ? t('loader_parsing') : (isLoading ? t('loader_analyzing') : t('upload_analyze_button'))}
                 </button>
               </div>

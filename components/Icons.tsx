@@ -183,12 +183,41 @@ export const ThumbsUpIcon: React.FC<IconProps> = ({ className }) => (
 
 export const ThumbsDownIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5 3 14.133a2.25 2.25 0 0 0-.831 1.585V18.25a2.25 2.25 0 0 0 2.25 2.25h1.5a2.25 2.25 0 0 0 2.25-2.25v-2.25a.75.75 0 0 0-.75-.75h-.75a.75.75 0 0 0-.75.75v2.25h-1.5V15.367c0-.262.105-.512.293-.7.187-.188.442-.293.707-.293h3.126c1.026 0 1.945-.694 2.054-1.715.045-.422.068-.85.068-1.285a11.95 11.95 0 0 0-2.649-7.521c-.388-.482-.987-.729-1.605-.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904a2.25 2.25 0 0 0-2.25 2.25v3.182c0 .537.213 1.042.59 1.414l1.822 1.822Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.633 10.5 3 14.133a2.25 2.25 0 0 0-.831 1.585V18.25a2.25 2.25 0 0 0 2.25 2.25h1.5a2.25 2.25 0 0 0 2.25-2.25v-2.25a.75.75 0 0 0-.75-.75h-.75a.75.75 0 0 0-.75.75v2.25h-1.5V15.367c0-.262.105-.512.293-.7.187-.188.442-.293.707-.293h3.126c1.026 0 1.945-.694 2.054-1.715.045-.422.068-.85.068-1.285a11.95 11.95 0 0 0-2.649-7.521c-.388-.482-.987.729-1.605-.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 0 0-1.423-.23H5.904a2.25 2.25 0 0 0-2.25 2.25v3.182c0 .537.213 1.042.59 1.414l1.822 1.822Z" />
     </svg>
 );
 
 export const LightbulbIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.311a6.01 6.01 0 0 0-3.75 0M3.75 12a6.01 6.01 0 0 1 12 0c0 1.622-.52 3.13-1.433 4.303a2.38 2.38 0 0 1-.84 1.036H8.433a2.38 2.38 0 0 1-.84-1.036C6.77 15.13 6.25 13.622 6.25 12a6.01 6.01 0 0 1 6-6c1.622 0 3.13.52 4.303 1.433a2.38 2.38 0 0 1 1.036.84" />
+    </svg>
+);
+
+export const SpinnerIcon: React.FC<IconProps> = ({ className }) => (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
+    </svg>
+);
+
+export const FeedbackIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
     </svg>
 );

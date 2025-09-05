@@ -29,20 +29,24 @@ const Section: React.FC<{ icon: React.ReactNode; title: string; children: React.
 const SwotCard: React.FC<{ title: string; items: string[]; color: string; icon: React.ReactNode }> = ({ title, items, color, icon }) => {
     const { t } = useTranslations();
     const borderColor = color.replace('text-', 'border-');
+    const bgColor = color.replace('text-', 'bg-');
 
     return (
         <div className={`bg-brand-card rounded-lg shadow-md border-t-4 ${borderColor}`}>
             <div className="p-5">
                 <div className="flex items-center">
-                    <div className={`flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full ${color.replace('text-','bg-')}/20 ${color}`}>
+                    <div className={`flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full ${bgColor}/20 ${color}`}>
                         {icon}
                     </div>
                     <h4 className={`ml-3 font-semibold text-lg text-brand-light`}>{title}</h4>
                 </div>
                 {items && items.length > 0 ? (
-                    <ul className="mt-4 list-disc list-inside space-y-2 text-gray-400 pl-1">
+                    <ul className="mt-4 space-y-3 text-gray-300">
                         {items.map((item, index) => (
-                            <li key={index}>{item}</li>
+                            <li key={index} className="flex items-start">
+                                <span className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 mr-3 ${bgColor}`}></span>
+                                <span className="flex-1">{item}</span>
+                            </li>
                         ))}
                     </ul>
                 ) : <p className="mt-4 text-gray-500 italic">{t('report_none_identified')}</p>}
@@ -52,7 +56,7 @@ const SwotCard: React.FC<{ title: string; items: string[]; color: string; icon: 
 };
 
 
-export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result }) => {
+export const AnalysisReport: React.FC<{ result: AnalysisResult; fileName: string; }> = ({ result, fileName }) => {
     const { t } = useTranslations();
     const { swot, redFlags, complexityScore, summary, negotiationPoints } = result;
 
@@ -62,6 +66,23 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
             unit: 'mm',
             format: 'a4'
         });
+
+        // File Name Logic
+        const effectiveFileName = fileName || 'Document';
+        const baseFileName = effectiveFileName.includes('.')
+            ? effectiveFileName.split('.').slice(0, -1).join('.')
+            : effectiveFileName;
+        
+        const headingFileName = baseFileName.length > 15 
+            ? `${baseFileName.substring(0, 15)}...` 
+            : baseFileName;
+        
+        const downloadBaseFileName = baseFileName.length > 15
+            ? baseFileName.substring(0, 15)
+            : baseFileName;
+        
+        const pdfDownloadName = `${downloadBaseFileName}_Analysis by LegalMitra.pdf`;
+        
         const FONT_SIZE = 11;
         const MARGIN = 15;
         const MAX_WIDTH = doc.internal.pageSize.getWidth() - MARGIN * 2;
@@ -74,8 +95,6 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
                 doc.addPage();
                 y = MARGIN;
             }
-            // FIX: jsPDF's splitTextToSize expects a string, but the `text` parameter could be a string array.
-            // This now handles both cases correctly.
             const lines = typeof text === 'string' ? doc.splitTextToSize(text, MAX_WIDTH) : text;
             doc.text(lines, MARGIN, y, options);
             y += (lines.length * (FONT_SIZE / 2.5)) + spacing;
@@ -109,10 +128,17 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
             addText(item.explanation, {}, 6);
         };
         
+        // PDF Heading
         doc.setFontSize(22);
         doc.setTextColor('#121212');
-        doc.text(t('pdf_title'), doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+        doc.text(headingFileName, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
         y += 8;
+        
+        doc.setFontSize(14);
+        doc.setTextColor('#444444');
+        doc.text(t('pdf_analysis_by'), doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+        y += 8;
+
         doc.setFontSize(10);
         doc.setTextColor('#666666');
         doc.text(`${t('pdf_generated_on')}: ${new Date().toLocaleDateString()}`, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
@@ -164,17 +190,36 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
         if (negotiationPoints.length > 0) negotiationPoints.forEach(item => addFlagOrPoint(item));
         else addText(t('report_none_identified_negotiate'));
 
-        // FIX: The method `getNumberOfPages` exists on the `jsPDF` instance, not on `doc.internal`.
+        // Footer
         const pageCount = doc.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
             doc.setFontSize(8);
             doc.setTextColor('#666666');
-            doc.text(`${t('pdf_page')} ${i} ${t('pdf_of')} ${pageCount}`, doc.internal.pageSize.getWidth() - MARGIN, doc.internal.pageSize.getHeight() - 10, { align: 'right' });
-            doc.text(t('pdf_footer_disclaimer'), MARGIN, doc.internal.pageSize.getHeight() - 10);
+
+            const pageNumY = doc.internal.pageSize.getHeight() - 10;
+            doc.text(`${t('pdf_page')} ${i} ${t('pdf_of')} ${pageCount}`, doc.internal.pageSize.getWidth() - MARGIN, pageNumY, { align: 'right' });
+            doc.text(t('pdf_footer_disclaimer'), MARGIN, pageNumY);
+
+            const ctaY = doc.internal.pageSize.getHeight() - 5;
+            const ctaPrefix = t('pdf_footer_cta_prefix');
+            const ctaLinkText = t('pdf_footer_cta_link');
+            
+            doc.text(ctaPrefix, MARGIN, ctaY);
+            
+            const prefixWidth = doc.getTextWidth(ctaPrefix);
+            const linkWidth = doc.getTextWidth(ctaLinkText);
+            const linkHeight = (doc.getFontSize() / doc.internal.scaleFactor);
+
+            doc.setTextColor(0, 0, 238); // Blue for link
+            doc.text(ctaLinkText, MARGIN + prefixWidth, ctaY);
+            
+            doc.link(MARGIN + prefixWidth, ctaY - linkHeight, linkWidth, linkHeight, {
+                url: 'https://LegalMitra.app'
+            });
         }
 
-        doc.save('LegalMitra_Analysis_Report.pdf');
+        doc.save(pdfDownloadName);
     };
 
     const getComplexityInfo = (score: number): { text: string; color: string } => {
