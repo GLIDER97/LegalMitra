@@ -1,11 +1,21 @@
 import React from 'react';
 import { jsPDF } from 'jspdf';
 import type { AnalysisResult } from '../types';
-import { DownloadIcon, AlertTriangleIcon, HandshakeIcon, DocumentTextIcon, ChartBarIcon, ScaleIcon } from './Icons';
+import { 
+    DownloadIcon, 
+    AlertTriangleIcon, 
+    HandshakeIcon, 
+    DocumentTextIcon, 
+    ChartBarIcon, 
+    ScaleIcon,
+    ThumbsUpIcon,
+    ThumbsDownIcon,
+    LightbulbIcon
+} from './Icons';
 import { useTranslations } from '../hooks/useTranslations';
 
 const Section: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
-    <div className="bg-brand-card p-6 rounded-lg shadow-lg border border-gray-800">
+    <div className="bg-brand-card/50 p-6 rounded-lg shadow-lg border border-gray-800">
         <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-lg bg-brand-gold/10 text-brand-gold">
                 {icon}
@@ -16,18 +26,27 @@ const Section: React.FC<{ icon: React.ReactNode; title: string; children: React.
     </div>
 );
 
-const SwotCard: React.FC<{ title: string; items: string[]; color: string }> = ({ title, items, color }) => {
+const SwotCard: React.FC<{ title: string; items: string[]; color: string; icon: React.ReactNode }> = ({ title, items, color, icon }) => {
     const { t } = useTranslations();
+    const borderColor = color.replace('text-', 'border-');
+
     return (
-        <div>
-            <h4 className={`font-semibold text-lg ${color}`}>{title}</h4>
-            {items && items.length > 0 ? (
-                <ul className="mt-2 list-disc list-inside space-y-1 text-gray-400">
-                    {items.map((item, index) => (
-                        <li key={index}>{item}</li>
-                    ))}
-                </ul>
-            ) : <p className="text-gray-500 italic">{t('report_none_identified')}</p>}
+        <div className={`bg-brand-card rounded-lg shadow-md border-t-4 ${borderColor}`}>
+            <div className="p-5">
+                <div className="flex items-center">
+                    <div className={`flex-shrink-0 flex items-center justify-center h-8 w-8 rounded-full ${color.replace('text-','bg-')}/20 ${color}`}>
+                        {icon}
+                    </div>
+                    <h4 className={`ml-3 font-semibold text-lg text-brand-light`}>{title}</h4>
+                </div>
+                {items && items.length > 0 ? (
+                    <ul className="mt-4 list-disc list-inside space-y-2 text-gray-400 pl-1">
+                        {items.map((item, index) => (
+                            <li key={index}>{item}</li>
+                        ))}
+                    </ul>
+                ) : <p className="mt-4 text-gray-500 italic">{t('report_none_identified')}</p>}
+            </div>
         </div>
     );
 };
@@ -48,29 +67,27 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
         const MAX_WIDTH = doc.internal.pageSize.getWidth() - MARGIN * 2;
         let y = MARGIN;
 
-        // Note: Default jsPDF fonts have limited support for non-Latin characters (like Arabic or Chinese).
-        // The PDF may not render them correctly without embedding specific fonts.
-        // For now, we use Helvetica as a default.
         doc.setFont('Helvetica');
 
-        // FIX: Argument of type 'string | string[]' is not assignable to parameter of type 'string'.
-        const addText = (text: string, options: any = {}, spacing: number = 7) => {
+        const addText = (text: string | string[], options: any = {}, spacing: number = 7) => {
             if (y > doc.internal.pageSize.getHeight() - MARGIN) {
                 doc.addPage();
                 y = MARGIN;
             }
-            const lines = doc.splitTextToSize(text, MAX_WIDTH);
+            // FIX: jsPDF's splitTextToSize expects a string, but the `text` parameter could be a string array.
+            // This now handles both cases correctly.
+            const lines = typeof text === 'string' ? doc.splitTextToSize(text, MAX_WIDTH) : text;
             doc.text(lines, MARGIN, y, options);
             y += (lines.length * (FONT_SIZE / 2.5)) + spacing;
         };
 
         const addTitle = (text: string) => {
-             if (y > doc.internal.pageSize.getHeight() - MARGIN - 10) { // check space for title
+             if (y > doc.internal.pageSize.getHeight() - MARGIN - 10) { 
                 doc.addPage();
                 y = MARGIN;
             }
             doc.setFontSize(16);
-            doc.setTextColor(40, 40, 40); // Darker text for titles
+            doc.setTextColor(40, 40, 40);
             addText(text, {}, 4);
             doc.setFontSize(FONT_SIZE);
             doc.setTextColor(80, 80, 80);
@@ -92,7 +109,6 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
             addText(item.explanation, {}, 6);
         };
         
-        // --- HEADER ---
         doc.setFontSize(22);
         doc.setTextColor('#121212');
         doc.text(t('pdf_title'), doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
@@ -101,7 +117,7 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
         doc.setTextColor('#666666');
         doc.text(`${t('pdf_generated_on')}: ${new Date().toLocaleDateString()}`, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
         y += 10;
-        doc.setDrawColor(212, 175, 55); // brand-gold
+        doc.setDrawColor(212, 175, 55);
         doc.setLineWidth(0.5);
         doc.line(MARGIN, y, doc.internal.pageSize.getWidth() - MARGIN, y);
         y += 10;
@@ -109,7 +125,6 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
         doc.setFontSize(FONT_SIZE);
         doc.setTextColor('#121212');
 
-        // --- CONTENT ---
         addTitle(t('pdf_summary_title'));
         addText(summary);
 
@@ -149,8 +164,7 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
         if (negotiationPoints.length > 0) negotiationPoints.forEach(item => addFlagOrPoint(item));
         else addText(t('report_none_identified_negotiate'));
 
-        // --- FOOTER ---
-        // FIX: Property 'getNumberOfPages' does not exist on type '...'. The method is on the jsPDF instance.
+        // FIX: The method `getNumberOfPages` exists on the `jsPDF` instance, not on `doc.internal`.
         const pageCount = doc.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
@@ -163,15 +177,19 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
         doc.save('LegalMitra_Analysis_Report.pdf');
     };
 
-    const getComplexityColor = (score: number) => {
-        if (score <= 3) return 'text-green-400';
-        if (score <= 7) return 'text-yellow-400';
-        return 'text-red-400';
+    const getComplexityInfo = (score: number): { text: string; color: string } => {
+        if (score <= 2) return { text: 'Very Simple', color: 'text-green-400' };
+        if (score <= 4) return { text: 'Simple', color: 'text-green-500' };
+        if (score <= 6) return { text: 'Moderate', color: 'text-yellow-400' };
+        if (score <= 8) return { text: 'Complex', color: 'text-orange-400' };
+        return { text: 'Very Complex', color: 'text-red-500' };
     };
+    
+    const complexityInfo = getComplexityInfo(complexityScore);
 
     return (
-        <div className="space-y-8">
-            <div className="text-center p-6 bg-brand-card/50 rounded-lg border border-gray-800">
+        <div className="bg-brand-card/30 p-4 sm:p-8 rounded-2xl border border-gray-800 shadow-2xl space-y-10">
+            <div className="text-center">
                 <h2 className="text-3xl font-bold text-brand-light">{t('report_title')}</h2>
                 <p className="mt-2 text-brand-gold">{t('report_subtitle')}</p>
                 <button 
@@ -184,28 +202,29 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
             </div>
 
             <Section icon={<DocumentTextIcon className="w-6 h-6" />} title={t('report_summary_title')}>
-                <p className="leading-relaxed whitespace-pre-wrap">{summary}</p>
+                <p className="leading-relaxed whitespace-pre-wrap text-lg">{summary}</p>
             </Section>
 
             <Section icon={<ChartBarIcon className="w-6 h-6" />} title={t('report_complexity_title')}>
-                 <div className="flex items-center gap-4">
-                    <div className="w-full bg-gray-700 rounded-full h-4">
+                <div className="flex items-center gap-4">
+                    <span className={`text-2xl font-bold ${complexityInfo.color}`}>{complexityScore}/10</span>
+                    <div className="w-full bg-gray-700 rounded-full h-4 relative">
                         <div 
-                            className={`h-4 rounded-full transition-all duration-500 ${getComplexityColor(complexityScore).replace('text-','bg-')}`} 
+                            className={`h-4 rounded-full transition-all duration-500 ${complexityInfo.color.replace('text-','bg-')}`} 
                             style={{ width: `${complexityScore * 10}%`}}
                         ></div>
                     </div>
-                    <span className={`text-2xl font-bold ${getComplexityColor(complexityScore)}`}>{complexityScore}/10</span>
+                    <span className={`text-lg font-semibold ${complexityInfo.color} w-32 text-right`}>{complexityInfo.text}</span>
                 </div>
-                <p className="text-sm text-gray-500">{t('report_complexity_desc')}</p>
+                <p className="text-sm text-gray-500 mt-2">{t('report_complexity_desc')}</p>
             </Section>
 
             <Section icon={<ScaleIcon className="w-6 h-6" />} title={t('report_swot_title')}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   <SwotCard title={t('swot_strengths')} items={swot.strengths} color="text-green-400" />
-                   <SwotCard title={t('swot_weaknesses')} items={swot.weaknesses} color="text-yellow-400" />
-                   <SwotCard title={t('swot_opportunities')} items={swot.opportunities} color="text-blue-400" />
-                   <SwotCard title={t('swot_threats')} items={swot.threats} color="text-red-400" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <SwotCard title={t('swot_strengths')} items={swot.strengths} color="text-green-400" icon={<ThumbsUpIcon className="w-5 h-5"/>} />
+                   <SwotCard title={t('swot_weaknesses')} items={swot.weaknesses} color="text-yellow-400" icon={<ThumbsDownIcon className="w-5 h-5"/>} />
+                   <SwotCard title={t('swot_opportunities')} items={swot.opportunities} color="text-blue-400" icon={<LightbulbIcon className="w-5 h-5"/>} />
+                   <SwotCard title={t('swot_threats')} items={swot.threats} color="text-red-400" icon={<AlertTriangleIcon className="w-5 h-5"/>} />
                 </div>
             </Section>
             
@@ -213,9 +232,14 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
                 {redFlags && redFlags.length > 0 ? (
                     <ul className="space-y-4">
                         {redFlags.map((flag, index) => (
-                            <li key={index} className="p-4 bg-red-900/20 border-l-4 border-red-500 rounded-r-md">
-                                <h4 className="font-bold text-red-300">{flag.flag}</h4>
-                                <p className="mt-1 text-gray-400 whitespace-pre-wrap">{flag.explanation}</p>
+                            <li key={index} className="p-4 bg-red-900/30 border-l-4 border-red-500 rounded-r-md">
+                                <div className="flex items-start">
+                                    <AlertTriangleIcon className="h-5 w-5 text-red-400 mt-1 flex-shrink-0"/>
+                                    <div className="ml-3">
+                                        <h4 className="font-bold text-red-300">{flag.flag}</h4>
+                                        <p className="mt-1 text-gray-300 whitespace-pre-wrap">{flag.explanation}</p>
+                                    </div>
+                                </div>
                             </li>
                         ))}
                     </ul>
@@ -226,9 +250,14 @@ export const AnalysisReport: React.FC<{ result: AnalysisResult }> = ({ result })
                  {negotiationPoints && negotiationPoints.length > 0 ? (
                     <ul className="space-y-4">
                         {negotiationPoints.map((point, index) => (
-                            <li key={index} className="p-4 bg-blue-900/20 border-l-4 border-blue-500 rounded-r-md">
-                                <h4 className="font-bold text-blue-300">{point.point}</h4>
-                                <p className="mt-1 text-gray-400 whitespace-pre-wrap">{point.explanation}</p>
+                            <li key={index} className="p-4 bg-blue-900/30 border-l-4 border-blue-500 rounded-r-md">
+                                <div className="flex items-start">
+                                    <HandshakeIcon className="h-5 w-5 text-blue-400 mt-1 flex-shrink-0"/>
+                                    <div className="ml-3">
+                                        <h4 className="font-bold text-blue-300">{point.point}</h4>
+                                        <p className="mt-1 text-gray-300 whitespace-pre-wrap">{point.explanation}</p>
+                                    </div>
+                                </div>
                             </li>
                         ))}
                     </ul>
