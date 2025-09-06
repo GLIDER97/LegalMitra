@@ -9,6 +9,7 @@ export const LanguageSwitcher: React.FC = () => {
 
   const languages: { code: Language; name: string }[] = [
     { code: 'en', name: 'English' },
+    { code: 'hi', name: 'हिन्दी' },
     { code: 'es', name: 'Español' },
     { code: 'ar', name: 'العربية' },
     { code: 'zh', name: '简体中文' },

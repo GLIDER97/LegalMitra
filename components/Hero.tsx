@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslations } from '../hooks/useTranslations';
-import { UploadIcon, DocumentTextIcon, SpinnerIcon } from './Icons';
+import { 
+    UploadIcon, 
+    DocumentTextIcon, 
+    SpinnerIcon,
+    SearchIcon,
+    ChevronUpIcon,
+    ChevronDownIcon,
+    XMarkIcon
+} from './Icons';
 
 interface HeroProps {
   documentText: string;
@@ -25,6 +33,11 @@ export const Hero: React.FC<HeroProps> = ({
 }) => {
   const { t } = useTranslations();
   const [isDragging, setIsDragging] = useState(false);
+
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchMatches, setSearchMatches] = useState<number[]>([]);
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -51,6 +64,51 @@ export const Hero: React.FC<HeroProps> = ({
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) handleFile(file);
+  };
+
+  useEffect(() => {
+    if (searchTerm.trim() && documentText) {
+      const escapedSearchTerm = searchTerm.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(escapedSearchTerm, 'gi');
+      const matches: number[] = [];
+      let match;
+      while ((match = regex.exec(documentText)) !== null) {
+        matches.push(match.index);
+      }
+      setSearchMatches(matches);
+      setCurrentMatchIndex(matches.length > 0 ? 0 : -1);
+    } else {
+      setSearchMatches([]);
+      setCurrentMatchIndex(-1);
+    }
+  }, [searchTerm, documentText]);
+
+  useEffect(() => {
+    if (currentMatchIndex !== -1 && textAreaRef.current && searchMatches.length > 0) {
+      const matchStartIndex = searchMatches[currentMatchIndex];
+      const matchLength = searchTerm.length;
+      const element = textAreaRef.current;
+      
+      element.focus();
+      element.setSelectionRange(matchStartIndex, matchStartIndex + matchLength);
+    }
+  }, [currentMatchIndex, searchMatches, searchTerm.length]);
+
+  const handleNextMatch = () => {
+    if (searchMatches.length === 0) return;
+    setCurrentMatchIndex((prevIndex) => (prevIndex + 1) % searchMatches.length);
+  };
+
+  const handlePrevMatch = () => {
+    if (searchMatches.length === 0) return;
+    setCurrentMatchIndex((prevIndex) => (prevIndex - 1 + searchMatches.length) % searchMatches.length);
+  };
+  
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    if (textAreaRef.current) {
+        textAreaRef.current.blur();
+    }
   };
 
 
@@ -106,6 +164,7 @@ export const Hero: React.FC<HeroProps> = ({
               
               <div className="mt-6">
                 <textarea
+                  ref={textAreaRef}
                   rows={10}
                   className="shadow-sm focus:ring-brand-gold focus:border-brand-gold block w-full sm:text-sm border border-gray-700 rounded-md p-4 bg-brand-dark text-brand-light placeholder-gray-500"
                   placeholder={t('upload_placeholder')}
@@ -122,8 +181,63 @@ export const Hero: React.FC<HeroProps> = ({
                   {fileName && <span className="ml-auto font-medium text-gray-300">{t('upload_file')}: {fileName}</span>}
                 </p>
               </div>
+
+              {documentText && !isParsing && !isLoading && (
+                <div className="mt-4 p-2 bg-brand-dark/60 rounded-lg flex items-center gap-2 sm:gap-4 border border-gray-700">
+                    <div className="relative flex-grow">
+                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                            <SearchIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                        </div>
+                        <input
+                            type="text"
+                            name="search"
+                            id="search"
+                            className="block w-full rounded-md border-0 bg-gray-700/50 py-1.5 pl-10 text-brand-light placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-gold sm:text-sm sm:leading-6"
+                            placeholder="Find in document..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    
+                    {searchTerm && (
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        <span className="text-sm text-gray-400 w-24 text-center">
+                        {searchMatches.length > 0 
+                            ? `${currentMatchIndex + 1} / ${searchMatches.length}`
+                            : 'No matches'}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={handlePrevMatch}
+                          disabled={searchMatches.length < 2}
+                          className="p-1 rounded-md text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-gold"
+                          aria-label="Previous match"
+                        >
+                        <ChevronUpIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleNextMatch}
+                          disabled={searchMatches.length < 2}
+                          className="p-1 rounded-md text-gray-300 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-gold"
+                          aria-label="Next match"
+                        >
+                        <ChevronDownIcon className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleClearSearch}
+                          className="p-1 rounded-md text-gray-300 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-gold"
+                          aria-label="Clear search"
+                        >
+                        <XMarkIcon className="h-5 w-5" />
+                        </button>
+                    </div>
+                    )}
+                </div>
+              )}
               
-              <div className="mt-8">
+              <div className="mt-6">
                 <button
                   onClick={handleAnalyze}
                   disabled={isParsing || isLoading || !documentText.trim()}

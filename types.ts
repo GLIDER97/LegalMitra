@@ -16,6 +16,7 @@ export interface NegotiationPoint {
 }
 
 export interface AnalysisResult {
+  documentTitle: string;
   swot: SwotAnalysis;
   redFlags: RedFlag[];
   complexityScore: number;

@@ -16,7 +16,7 @@ import { Testimonials } from './components/Testimonials';
 import { UseCases } from './components/UseCases';
 import { FAQ } from './components/FAQ';
 import { FeedbackButton } from './components/FeedbackButton';
-import { AlertTriangleIcon } from './components/Icons';
+import { ErrorPopup } from './components/ErrorPopup';
 
 
 const PDF_WORKER_URL = 'https://aistudiocdn.com/pdfjs-dist@^4.4.170/build/pdf.worker.min.mjs';
@@ -130,6 +130,7 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-brand-dark text-brand-light">
+      <ErrorPopup error={error} onDismiss={() => setError(null)} />
       <Header />
       <main className="flex-grow">
         <Hero
@@ -155,20 +156,10 @@ const App: React.FC = () => {
                 </div>
               </div>
             )}
-            {error && (
-                <div className="mt-6 p-4 bg-red-900/50 border border-red-700 text-red-300 rounded-lg flex items-start gap-4 max-w-4xl mx-auto">
-                    <div className="flex-shrink-0 pt-0.5">
-                        <AlertTriangleIcon className="h-6 w-6 text-red-400" />
-                    </div>
-                    <div>
-                        <h4 className="font-bold text-red-200">{error.title}</h4>
-                        <p className="mt-1">{error.message}</p>
-                    </div>
-                </div>
-            )}
+            
             {analysisResult && !isLoading && !isParsing && (
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <AnalysisReport result={analysisResult} fileName={fileName} />
+                <div className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
+                    <AnalysisReport result={analysisResult} fileName={fileName} setError={setError} />
                 </div>
             )}
         </div>
