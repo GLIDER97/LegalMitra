@@ -18,6 +18,7 @@ import { FAQ } from './components/FAQ';
 import { FeedbackButton } from './components/FeedbackButton';
 import { ErrorPopup } from './components/ErrorPopup';
 import { LanguagePrompt } from './components/LanguagePrompt';
+import { BlogContent } from './components/BlogContent';
 
 
 const PDF_WORKER_URL = 'https://aistudiocdn.com/pdfjs-dist@^4.4.170/build/pdf.worker.min.mjs';
@@ -164,13 +165,20 @@ const App: React.FC = () => {
                 </div>
             )}
         </div>
-
+        
         <WhyLegalMitra />
         <UseCases />
         <FAQ />
         <TrustAndCredibility />
         <Testimonials />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <hr className="border-t border-gray-800" />
+        </div>
+
         <MissionVision />
+
+        {!analysisResult && !isLoading && !isParsing && <BlogContent />}
 
       </main>
       <Footer />
