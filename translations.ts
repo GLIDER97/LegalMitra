@@ -901,8 +901,39 @@ const faqSection = {
     },
 };
 
+const languagePromptSection = {
+    language_prompt_title: {
+        en: "Switch to {languageName}?",
+        es: "¿Cambiar a {languageName}?",
+        ar: "التبديل إلى {languageName}؟",
+        zh: "切换到 {languageName}？",
+        hi: "{languageName} में स्विच करें?",
+    },
+    language_prompt_message: {
+        en: "It looks like you prefer {languageName}. Would you like to switch the language of the app?",
+        es: "Parece que prefieres {languageName}. ¿Te gustaría cambiar el idioma de la aplicación?",
+        ar: "يبدو أنك تفضل {languageName}. هل ترغب في تبديل لغة التطبيق؟",
+        zh: "看起来您更喜欢 {languageName}。您想切换应用的语言吗？",
+        hi: "ऐसा लगता है कि आप {languageName} पसंद करते हैं। क्या आप ऐप की भाषा बदलना चाहेंगे?",
+    },
+    language_prompt_no_thanks: {
+        en: "No, Thanks",
+        es: "No, gracias",
+        ar: "لا، شكراً",
+        zh: "不，谢谢",
+        hi: "नहीं, धन्यवाद",
+    },
+    language_prompt_translate: {
+        en: "Translate to {languageName}",
+        es: "Traducir a {languageName}",
+        ar: "الترجمة إلى {languageName}",
+        zh: "翻译成 {languageName}",
+        hi: "{languageName} में अनुवाद करें",
+    },
+};
 
-export type TranslationKeys = keyof typeof commonTranslations | keyof typeof emotionalCopy | keyof typeof trustSection | keyof typeof testimonialsSection | keyof typeof useCasesSection | keyof typeof faqSection;
+
+export type TranslationKeys = keyof typeof commonTranslations | keyof typeof emotionalCopy | keyof typeof trustSection | keyof typeof testimonialsSection | keyof typeof useCasesSection | keyof typeof faqSection | keyof typeof languagePromptSection;
 
 type Translations = {
   [key in Language]: {
@@ -914,7 +945,7 @@ type Translations = {
 // to a per-language key mapping to match the expected `Translations` type.
 // This also removes an incorrect proxy implementation that was causing type errors.
 const languages: Language[] = ['en', 'es', 'ar', 'zh', 'hi'];
-const allTranslationSources = { ...commonTranslations, ...emotionalCopy, ...trustSection, ...testimonialsSection, ...useCasesSection, ...faqSection };
+const allTranslationSources = { ...commonTranslations, ...emotionalCopy, ...trustSection, ...testimonialsSection, ...useCasesSection, ...faqSection, ...languagePromptSection };
 
 const generatedTranslations = {} as Translations;
 

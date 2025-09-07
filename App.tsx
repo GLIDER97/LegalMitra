@@ -17,6 +17,7 @@ import { UseCases } from './components/UseCases';
 import { FAQ } from './components/FAQ';
 import { FeedbackButton } from './components/FeedbackButton';
 import { ErrorPopup } from './components/ErrorPopup';
+import { LanguagePrompt } from './components/LanguagePrompt';
 
 
 const PDF_WORKER_URL = 'https://aistudiocdn.com/pdfjs-dist@^4.4.170/build/pdf.worker.min.mjs';
@@ -175,6 +176,7 @@ const App: React.FC = () => {
       <Footer />
       <LanguageSwitcher />
       <FeedbackButton />
+      <LanguagePrompt />
     </div>
   );
 };

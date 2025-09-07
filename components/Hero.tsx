@@ -113,7 +113,7 @@ export const Hero: React.FC<HeroProps> = ({
 
 
   return (
-     <section id="upload" className="py-16 sm:py-24 relative overflow-hidden bg-brand-dark">
+     <section id="upload" className="py-12 sm:py-20 relative overflow-hidden bg-brand-dark">
         <div 
             aria-hidden="true" 
             className="absolute inset-0 bg-gradient-to-br from-brand-dark via-gray-900 to-black opacity-80"
@@ -123,12 +123,12 @@ export const Hero: React.FC<HeroProps> = ({
         ></div>
         
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-brand-light tracking-tight">{t('hero_title')}</h2>
-            <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-300">{t('hero_subtitle')}</p>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-brand-light tracking-tight">{t('hero_title')}</h2>
+            <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-gray-300">{t('hero_subtitle')}</p>
             
-            <div className="mt-12 max-w-2xl mx-auto bg-brand-card/50 backdrop-blur-sm p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-800">
+            <div className="mt-10 max-w-2xl mx-auto bg-brand-card/50 backdrop-blur-sm p-4 sm:p-8 rounded-2xl shadow-2xl border border-gray-800">
               <div 
-                className={`relative block w-full border-2 ${isDragging ? 'border-brand-gold' : 'border-gray-600'} border-dashed rounded-lg p-8 sm:p-12 text-center transition-colors bg-brand-dark/50`}
+                className={`relative block w-full border-2 ${isDragging ? 'border-brand-gold' : 'border-gray-600'} border-dashed rounded-lg p-6 sm:p-12 text-center transition-colors bg-brand-dark/50`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
@@ -201,7 +201,7 @@ export const Hero: React.FC<HeroProps> = ({
                     
                     {searchTerm && (
                     <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                        <span className="text-sm text-gray-400 w-24 text-center">
+                        <span className="text-sm text-gray-400 min-w-[6rem] text-center">
                         {searchMatches.length > 0 
                             ? `${currentMatchIndex + 1} / ${searchMatches.length}`
                             : 'No matches'}
@@ -241,7 +241,7 @@ export const Hero: React.FC<HeroProps> = ({
                 <button
                   onClick={handleAnalyze}
                   disabled={isParsing || isLoading || !documentText.trim()}
-                  className="w-full inline-flex items-center justify-center px-6 py-4 border border-transparent text-base font-medium rounded-md shadow-sm text-brand-dark bg-brand-gold hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-gold disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+                  className="w-full inline-flex items-center justify-center px-6 py-3 sm:py-4 border border-transparent text-base font-medium rounded-md shadow-sm text-brand-dark bg-brand-gold hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-gold disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
                 >
                   {isLoading ? (
                     <SpinnerIcon className="h-5 w-5 mr-3 animate-spin" />

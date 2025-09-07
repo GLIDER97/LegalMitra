@@ -49,7 +49,7 @@ export const UseCases: React.FC = () => {
           <h2 className="text-3xl sm:text-4xl font-extrabold text-brand-light tracking-tight">{t('use_cases_title')}</h2>
           <p className="mt-4 text-lg text-gray-300">{t('use_cases_subtitle')}</p>
         </div>
-        <div className="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-2">
+        <div className="mt-16 grid gap-8 md:grid-cols-1 lg:grid-cols-2">
          {useCaseList.map((useCase, index) => (
              <UseCaseCard key={index} {...useCase} />
          ))}

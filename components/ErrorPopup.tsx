@@ -13,7 +13,7 @@ export const ErrorPopup: React.FC<ErrorPopupProps> = ({ error, onDismiss }) => {
   if (!error) return null;
 
   return (
-    <div className="fixed top-5 right-5 z-[100] w-full max-w-sm animate-fade-in-down" role="alert" aria-live="assertive">
+    <div className="fixed top-4 left-4 right-4 sm:left-auto sm:w-full sm:max-w-sm sm:right-5 z-[100] animate-fade-in-down" role="alert" aria-live="assertive">
       <div className="bg-red-900/80 backdrop-blur-md border border-red-700 text-red-300 rounded-lg shadow-lg p-4 flex items-start gap-4">
         <div className="flex-shrink-0 pt-0.5">
             <AlertTriangleIcon className="h-6 w-6 text-red-400" />

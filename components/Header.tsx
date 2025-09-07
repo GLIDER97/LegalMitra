@@ -14,8 +14,8 @@ export const Header: React.FC = () => {
               <LawBookIcon className="h-8 w-8 text-brand-gold" />
             </div>
             <div className="ml-4 text-center">
-              <h1 className="text-2xl font-bold text-brand-light">LegalMitra</h1>
-              <p className="text-sm text-brand-gold font-semibold tracking-wide">{t('tagline')}</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-brand-light">LegalMitra</h1>
+              <p className="text-xs sm:text-sm text-brand-gold font-semibold tracking-wide">{t('tagline')}</p>
             </div>
           </div>
         </div>

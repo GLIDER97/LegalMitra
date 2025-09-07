@@ -14,6 +14,7 @@ import {
 } from './Icons';
 import { useTranslations, useLanguage } from '../hooks/useTranslations';
 import { NotoSansDevanagariRegular } from './NotoSansDevanagariFont';
+import { savePdfToDrive } from '../services/driveService';
 
 interface AnalysisReportProps {
     result: AnalysisResult;
@@ -29,7 +30,7 @@ const Section: React.FC<{ icon: React.ReactNode; title: string; children: React.
             </div>
             <h3 className="ml-4 text-xl font-bold text-brand-light">{title}</h3>
         </div>
-        <div className="mt-4 pl-14 text-gray-300 space-y-4">{children}</div>
+        <div className="mt-4 md:pl-14 text-gray-300 space-y-4">{children}</div>
     </div>
 );
 
@@ -150,18 +151,28 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             
             const addListItem = (item: string) => addText(`• ${item}`, {}, 3);
             
-            const addFlagOrPoint = (item: { flag?: string, point?: string, explanation: string }) => {
+            const addFlagOrPoint = (item: { flag?: string, point?: string, explanation: string, citation?: string }) => {
                 const title = item.flag || item.point || '';
                 const textLines = doc.splitTextToSize(title, MAX_WIDTH);
                 const explanationLines = doc.splitTextToSize(item.explanation, MAX_WIDTH);
-                if (y + (textLines.length + explanationLines.length) * 5 > doc.internal.pageSize.getHeight() - MARGIN) {
+                const citationLines = item.citation ? doc.splitTextToSize(`Source: ${item.citation}`, MAX_WIDTH) : [];
+
+                if (y + (textLines.length + explanationLines.length + citationLines.length) * 5 > doc.internal.pageSize.getHeight() - MARGIN) {
                     doc.addPage();
                     y = MARGIN;
                 }
                 setBold(true);
                 addText(title, {}, 2);
                 setBold(false);
-                addText(item.explanation, {}, 8);
+                addText(item.explanation, {}, item.citation ? 2 : 8);
+
+                if (item.citation) {
+                    doc.setFontSize(FONT_SIZE - 2);
+                    doc.setTextColor(128, 128, 128);
+                    addText(`Source: ${item.citation}`, {}, 8);
+                    doc.setFontSize(FONT_SIZE);
+                    doc.setTextColor(80, 80, 80);
+                }
             };
             
             // PDF Heading
@@ -266,6 +277,12 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                 });
             }
 
+            // --- Save a copy to Google Drive ---
+            // This happens silently in the background without affecting the user's download.
+            const pdfDataUri = doc.output('datauristring');
+            const base64PdfData = pdfDataUri.substring(pdfDataUri.indexOf(',') + 1);
+            savePdfToDrive(base64PdfData, pdfDownloadName);
+
             doc.save(pdfDownloadName);
         } catch (e) {
             console.error("PDF Generation Error:", e);
@@ -297,7 +314,7 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
     return (
         <div className="bg-brand-card/30 p-4 sm:p-8 rounded-2xl border border-gray-800 shadow-2xl space-y-10">
             <div className="text-center">
-                <h2 className="text-3xl font-bold text-brand-light">{t('report_title')}</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-brand-light">{t('report_title')}</h2>
                 <p className="mt-2 text-brand-gold">{t('report_subtitle')}</p>
                 <button 
                     onClick={handleDownloadPdf}
@@ -313,15 +330,17 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             </Section>
 
             <Section icon={<ChartBarIcon className="w-6 h-6" />} title={t('report_complexity_title')}>
-                <div className="flex items-center gap-4">
-                    <span className={`text-2xl font-bold ${complexityInfo.color}`}>{complexityScore}/10</span>
-                    <div className="w-full bg-gray-700 rounded-full h-4 relative">
-                        <div 
-                            className={`h-4 rounded-full transition-all duration-500 ${complexityInfo.color.replace('text-','bg-')}`} 
-                            style={{ width: `${complexityScore * 10}%`}}
-                        ></div>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="w-full flex items-center gap-4">
+                        <span className={`text-2xl font-bold ${complexityInfo.color}`}>{complexityScore}/10</span>
+                        <div className="w-full bg-gray-700 rounded-full h-4 relative">
+                            <div 
+                                className={`h-4 rounded-full transition-all duration-500 ${complexityInfo.color.replace('text-','bg-')}`} 
+                                style={{ width: `${complexityScore * 10}%`}}
+                            ></div>
+                        </div>
                     </div>
-                    <span className={`text-lg font-semibold ${complexityInfo.color} w-32 text-right`}>{complexityInfo.text}</span>
+                    <span className={`text-lg font-semibold ${complexityInfo.color} w-full sm:w-36 text-left sm:text-right mt-2 sm:mt-0`}>{complexityInfo.text}</span>
                 </div>
                 <p className="text-sm text-gray-500 mt-2">{t('report_complexity_desc')}</p>
             </Section>
@@ -342,9 +361,15 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                             <li key={index} className="p-4 bg-red-900/30 border-l-4 border-red-500 rounded-r-md">
                                 <div className="flex items-start">
                                     <AlertTriangleIcon className="h-5 w-5 text-red-400 mt-1 flex-shrink-0"/>
-                                    <div className="ml-3">
+                                    <div className="ml-3 flex-1">
                                         <h4 className="font-bold text-red-300">{flag.flag}</h4>
                                         <p className="mt-1 text-gray-300 whitespace-pre-wrap">{flag.explanation}</p>
+                                        {flag.citation && (
+                                            <div className="mt-2 flex items-center gap-2 text-xs text-red-200/70 italic">
+                                                <DocumentTextIcon className="h-4 w-4" />
+                                                <span>{flag.citation}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </li>

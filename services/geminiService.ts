@@ -55,11 +55,12 @@ const analysisSchema = {
         type: Type.OBJECT,
         properties: {
             flag: { type: Type.STRING, description: "A concise summary of the potential red flag." },
-            explanation: { type: Type.STRING, description: "A brief explanation of why this is a potential issue." }
+            explanation: { type: Type.STRING, description: "A brief explanation of why this is a potential issue." },
+            citation: { type: Type.STRING, description: "The specific page number and section/subsection from the document where this red flag is located (e.g., 'Page 5, Section 3.2' or 'Page 2, Clause B'). If a precise location is not available, provide the best possible reference." }
         },
-        required: ["flag", "explanation"]
+        required: ["flag", "explanation", "citation"]
       },
-      description: "A list of common legal red flags found in the document."
+      description: "A list of common legal red flags found in the document, including citations to their location."
     },
     negotiationPoints: {
         type: Type.ARRAY,
@@ -96,7 +97,10 @@ export const analyzeDocument = async (documentText: string, language: Language):
     2.  **Summary**: A concise summary of the document's core purpose.
     3.  **Complexity Score**: A legal complexity score on a scale of 1 to 10, where 1 is extremely simple and 10 is exceptionally complex.
     4.  **SWOT Analysis**: A SWOT analysis (Strengths, Weaknesses, Opportunities, Threats) from the perspective of the primary party receiving the document.
-    5.  **Red Flags**: A list of potential 'red flags'. For each, provide a clear title for the flag and explain the associated risk.
+    5.  **Red Flags**: A list of potential 'red flags'. For each, provide:
+        a. A clear title for the flag.
+        b. An explanation of the associated risk.
+        c. A precise citation, including the page number and section/subsection where the flag is located in the original document (e.g., "Page 5, Section 3.2" or "Page 2, Clause B"). This is mandatory.
     6.  **Points to Negotiate**: A list of specific 'Points to Negotiate'. These should be actionable suggestions for improving the terms. For each point, provide a clear title (the 'point') and an 'explanation' of what to ask for and why it's beneficial.
 
     Here is the document to analyze:

@@ -8,6 +8,7 @@ export interface SwotAnalysis {
 export interface RedFlag {
   flag: string;
   explanation: string;
+  citation: string;
 }
 
 export interface NegotiationPoint {
