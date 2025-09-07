@@ -1,4 +1,4 @@
-const FOLDER_ID = '1yx31Trw4LbQqsL10AqEpYmJzlAWePBMd'; // Folder: LegalMitraData
+const FOLDER_ID = '1yx31Trw4LbQqsL10AqEpYmJzlAWePBMd'; // Folder: LegalIQ.appData
 
 /**
  * IMPORTANT: This URL is a placeholder and must be replaced with the actual deployment URL of a Google Apps Script Web App.

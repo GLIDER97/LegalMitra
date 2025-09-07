@@ -54,6 +54,24 @@ export const TranslateIcon: React.FC<IconProps> = ({ className }) => (
     </svg>
 );
 
+export const LegalIqLogoIcon: React.FC<IconProps> = ({ className }) => (
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        viewBox="0 0 500 500" 
+        className={className} 
+        aria-hidden="true"
+    >
+        <g fill="currentColor" stroke="currentColor">
+            {/* Lawyer's bow icon */}
+            <path stroke="none" d="M200 165L250 235L220 385L150 385ZM300 165L250 235L280 385L350 385Z" />
+            
+            {/* Double circular rings */}
+            <circle cx="250" cy="250" r="240" strokeWidth="12" fill="none" />
+            <circle cx="250" cy="250" r="220" strokeWidth="6" fill="none" />
+        </g>
+    </svg>
+);
+
 
 // Icons from previous light theme, kept in case they are needed for features
 export const BoltIcon: React.FC<IconProps> = ({ className }) => (

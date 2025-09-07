@@ -88,7 +88,7 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                 ? baseFileName.substring(0, 15)
                 : baseFileName;
             
-            const pdfDownloadName = `${downloadBaseFileName}_Analysis by LegalMitra.pdf`;
+            const pdfDownloadName = `${downloadBaseFileName}_Analysis by LegalIQ.app.pdf`;
             
             const FONT_SIZE = 11;
             const MARGIN = 15;
@@ -194,7 +194,42 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             
             doc.setFontSize(14);
             doc.setTextColor('#444444');
-            doc.text(t('pdf_analysis_by'), doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+            const analysisByText = t('pdf_analysis_by');
+            const linkText = 'LegalIQ.app';
+            const url = 'https://legaliq.app/';
+            const parts = analysisByText.split(linkText);
+            const prefix = parts[0];
+            const suffix = parts.length > 1 ? parts[1] : '';
+
+            const prefixWidth = doc.getTextWidth(prefix);
+            const linkWidth = doc.getTextWidth(linkText);
+            const suffixWidth = doc.getTextWidth(suffix);
+            const totalWidth = prefixWidth + linkWidth + suffixWidth;
+
+            const startX = (doc.internal.pageSize.getWidth() - totalWidth) / 2;
+            const linkX = startX + prefixWidth;
+            const suffixX = linkX + linkWidth;
+            const textHeight = (doc.getFontSize() / doc.internal.scaleFactor);
+
+            // Draw the prefix
+            doc.text(prefix, startX, y);
+
+            // Draw the link text
+            doc.setTextColor(0, 0, 238); // Blue for link
+            doc.text(linkText, linkX, y);
+            
+            // Add the hyperlink
+            doc.link(linkX, y - textHeight, linkWidth, textHeight, { url: url });
+            
+            // Draw underline
+            doc.setDrawColor(0, 0, 238);
+            doc.setLineWidth(0.2);
+            doc.line(linkX, y + 1, linkX + linkWidth, y + 1);
+
+            // Draw the suffix
+            doc.setTextColor('#444444'); // Reset color
+            doc.text(suffix, suffixX, y);
+
             y += 8;
 
             doc.setFontSize(10);
@@ -271,9 +306,14 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
 
                 doc.setTextColor(0, 0, 238); // Blue for link
                 doc.text(ctaLinkText, MARGIN + prefixWidth, ctaY);
+
+                // Add underline for footer link
+                doc.setDrawColor(0, 0, 238);
+                doc.setLineWidth(0.2);
+                doc.line(MARGIN + prefixWidth, ctaY + 0.5, MARGIN + prefixWidth + linkWidth, ctaY + 0.5);
                 
                 doc.link(MARGIN + prefixWidth, ctaY - linkHeight, linkWidth, linkHeight, {
-                    url: 'https://LegalMitra.app'
+                    url: 'https://legaliq.app/'
                 });
             }
 

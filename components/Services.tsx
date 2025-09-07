@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslations } from '../hooks/useTranslations';
-import { LawBookIcon } from './Icons';
+import { LegalIqLogoIcon } from './Icons';
 
 export const MissionVision: React.FC = () => {
     const { t } = useTranslations();
@@ -13,7 +13,7 @@ export const MissionVision: React.FC = () => {
         <section className="bg-brand-card relative">
             <div className="absolute inset-0 bg-black/30"></div>
             <div className="max-w-4xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8 relative">
-                <LawBookIcon className="h-12 w-12 text-brand-gold mx-auto mb-4" />
+                <LegalIqLogoIcon className="h-12 w-12 text-brand-gold mx-auto mb-4" />
                 <h2 className="text-3xl font-extrabold text-white sm:text-4xl">
                     <span className="block">{t('mission_vision_title')}</span>
                 </h2>

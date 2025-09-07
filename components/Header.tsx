@@ -1,5 +1,5 @@
 import React from 'react';
-import { LawBookIcon } from './Icons';
+import { LegalIqLogoIcon } from './Icons';
 import { useTranslations } from '../hooks/useTranslations';
 
 export const Header: React.FC = () => {
@@ -11,10 +11,12 @@ export const Header: React.FC = () => {
         <div className="flex items-center justify-center h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <LawBookIcon className="h-8 w-8 text-brand-gold" />
+              <LegalIqLogoIcon className="h-8 w-8 text-brand-gold" />
             </div>
             <div className="ml-4 text-center">
-              <h1 className="text-xl sm:text-2xl font-bold text-brand-light">LegalMitra</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-brand-light">
+                Legal<span style={{ color: '#D4AF37' }}>IQ</span>.app
+              </h1>
               <p className="text-xs sm:text-sm text-brand-gold font-semibold tracking-wide">{t('tagline')}</p>
             </div>
           </div>

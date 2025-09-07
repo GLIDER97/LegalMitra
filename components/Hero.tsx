@@ -111,6 +111,8 @@ export const Hero: React.FC<HeroProps> = ({
     }
   };
 
+  const heroTitle = t('hero_title');
+  const titleParts = heroTitle.split('LegalIQ.app');
 
   return (
      <section id="upload" className="py-12 sm:py-20 relative overflow-hidden bg-brand-dark">
@@ -123,7 +125,16 @@ export const Hero: React.FC<HeroProps> = ({
         ></div>
         
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-brand-light tracking-tight">{t('hero_title')}</h2>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-brand-light tracking-tight">
+              {titleParts.length > 1 ? (
+                <>
+                  Legal<span style={{ color: '#D4AF37' }}>IQ</span>.app
+                  {titleParts[1]}
+                </>
+              ) : (
+                heroTitle
+              )}
+            </h2>
             <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-gray-300">{t('hero_subtitle')}</p>
             
             <div className="mt-10 max-w-2xl mx-auto bg-brand-card/50 backdrop-blur-sm p-4 sm:p-8 rounded-2xl shadow-2xl border border-gray-800">
