@@ -9,6 +9,9 @@ export const Footer: React.FC = () => {
         <p>
           &copy; {new Date().getFullYear()} {t('footer_copyright')}
         </p>
+        <p>
+          Created by <a href="https://www.linkedin.com/in/vipulsingh97/" target="_blank" rel="noopener noreferrer" className="font-medium text-brand-gold hover:underline">Vipul Singh</a>
+        </p>
         <p className="max-w-xl text-xs text-gray-500">
             <strong>{t('footer_disclaimer_title')}:</strong> {t('footer_disclaimer_text')}
         </p>
