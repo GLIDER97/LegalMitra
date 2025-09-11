@@ -150,6 +150,12 @@ export const analyzeDocument = async (documentText: string, language: Language):
     return parsedResult;
   } catch (error) {
     console.error("Error calling Gemini API:", error);
-    throw new Error("Failed to get analysis from AI. The model may have returned an invalid format or an error occurred.");
+    if (error instanceof Error) {
+        // Pass the specific error message from the SDK up to the UI.
+        // This will give more context, e.g., "API key not valid" or permission errors.
+        throw new Error(error.message);
+    }
+    // Fallback for non-Error objects being thrown.
+    throw new Error("An unknown error occurred while communicating with the AI service.");
   }
 };

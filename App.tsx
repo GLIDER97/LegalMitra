@@ -111,10 +111,27 @@ const App: React.FC = () => {
       const result = await analyzeDocument(documentText, language);
       setAnalysisResult(result);
     } catch (err) {
-      console.error(err);
+      console.error("Analysis Error Details:", err);
+      
+      let errorMessage = t('error_analysis_message'); // Default message
+      
+      if (err instanceof Error) {
+          const lowerCaseMessage = err.message.toLowerCase();
+          
+          if (lowerCaseMessage.includes('api key not valid')) {
+              errorMessage = "There appears to be a configuration issue with the application's API Key. Please contact support.";
+          } else if (lowerCaseMessage.includes('permission denied') || lowerCaseMessage.includes('403')) {
+              errorMessage = "This request was blocked due to security restrictions (e.g., domain not authorized). Please contact support.";
+          } else if (lowerCaseMessage.includes('quota') || lowerCaseMessage.includes('429')) {
+              errorMessage = "The service is currently experiencing high traffic or has exceeded its usage limit. Please try again later.";
+          } else if (lowerCaseMessage.includes('json')) {
+              errorMessage = "The AI returned an unexpected response format. Please try your request again. If the issue persists, contact support."
+          }
+      }
+
       setError({
         title: t('error_analysis_title'),
-        message: t('error_analysis_message')
+        message: errorMessage
       });
     } finally {
       setIsLoading(false);
@@ -162,7 +179,7 @@ const App: React.FC = () => {
             )}
             
             {analysisResult && !isLoading && !isParsing && (
-                <div className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     <AnalysisReport result={analysisResult} fileName={fileName} setError={setError} />
                 </div>
             )}

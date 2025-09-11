@@ -3,7 +3,7 @@ import { GoogleGenAI, Chat as GeminiChat } from '@google/genai';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
 import type { Language } from '../translations';
 import { 
-    LegalIqLogoIcon,
+    ChatBubbleOvalLeftEllipsisIcon,
     XMarkIcon, 
     PaperAirplaneIcon, 
     SparklesIcon, 
@@ -41,7 +41,9 @@ export const Chat: React.FC<ChatProps> = ({ documentText }) => {
             
             const systemInstruction = `You are a helpful AI assistant named LegalIQ.app. You are having a conversation with a user about a legal document they have provided. Your goal is to answer their follow-up questions clearly and concisely.
 
-- **Crucially, you MUST detect the language of the user's query and respond in the EXACT same language and writing style.** This includes mixed languages like 'Hinglish' (e.g., if the user asks "Is contract ka time period kya hai?", you must respond in Hinglish like "Is contract ka time period 2 saal hai.").
+- **Your most important rule is to match the user's language.** You MUST detect the language of the user's query and respond in the EXACT same language and writing style.
+- For example, if the user asks in English "What is the time period of this contract?", you MUST respond in English.
+- If the user asks in a mixed language like 'Hinglish' (e.g., "Is contract ka time period kya hai?"), you MUST respond in Hinglish.
 - Keep your answers short, crisp, and to the point. Avoid long paragraphs. Use bullet points if it helps with clarity.
 - Maintain the same tone and style as the user's query.
 - Base your answers STRICTLY on the content of the document provided below. Do not invent information or provide external legal advice. If the answer is not in the document, state that the information is not available in the provided text, but do so in the user's language.
@@ -99,14 +101,14 @@ ${documentText}
     return (
         <>
             {/* Floating Chat Button */}
-            <div className={`fixed bottom-20 right-5 z-40 transition-all duration-300 ${!isChatOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+            <div className={`fixed bottom-5 left-1/2 -translate-x-1/2 sm:bottom-20 sm:left-auto sm:right-5 sm:translate-x-0 z-40 transition-all duration-300 ${!isChatOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
                 <button
                     onClick={() => setIsChatOpen(true)}
                     className="flex items-center gap-3 px-4 py-3 bg-brand-gold text-brand-dark rounded-full shadow-lg hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-gold transition-transform transform hover:scale-105"
                     aria-label={t('chat_button_label')}
                 >
-                    <LegalIqLogoIcon className="h-6 w-6" />
-                    <span className="font-semibold hidden sm:inline">{t('chat_button_label')}</span>
+                    <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6" />
+                    <span className="font-semibold">{t('chat_button_label')}</span>
                 </button>
             </div>
 
@@ -129,7 +131,7 @@ ${documentText}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
                         {/* Welcome Message */}
                         <div className="p-3 bg-brand-dark/50 rounded-lg text-center">
-                            <p className="text-sm text-gray-300">{t('chat_welcome_message')}</p>
+                            <p className="text-base text-gray-300">{t('chat_welcome_message')}</p>
                             <p className="mt-2 text-xs text-gray-500">{t('chat_disclaimer')}</p>
                         </div>
 
@@ -141,7 +143,7 @@ ${documentText}
                                     </div>
                                 )}
                                 <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'user' ? 'bg-brand-gold text-brand-dark rounded-br-none' : 'bg-gray-700 text-brand-light rounded-bl-none'}`}>
-                                    <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                                    <p className="text-base whitespace-pre-wrap">{msg.text}</p>
                                 </div>
                                 {msg.role === 'user' && (
                                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">

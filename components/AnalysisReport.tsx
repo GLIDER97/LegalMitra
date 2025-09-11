@@ -113,6 +113,7 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
     const handleDownloadPdf = () => {
         try {
             setError(null); // Clear previous errors before attempting to generate a new PDF.
+            const appUrl = window.location.origin + '/';
             const doc = new jsPDF({
                 orientation: 'p',
                 unit: 'mm',
@@ -312,7 +313,6 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             doc.setTextColor('#444444');
             const analysisByText = t('pdf_analysis_by');
             const linkText = 'LegalIQ.app';
-            const url = 'https://legaliq.app/';
             const parts = analysisByText.split(linkText);
             const prefix = parts[0];
             const suffix = parts.length > 1 ? parts[1] : '';
@@ -335,7 +335,7 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             doc.text(linkText, linkX, y);
             
             // Add the hyperlink
-            doc.link(linkX, y - textHeight, linkWidth, textHeight, { url: url });
+            doc.link(linkX, y - textHeight, linkWidth, textHeight, { url: appUrl });
             
             // Draw underline
             doc.setDrawColor(0, 0, 238);
@@ -447,7 +447,7 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                 doc.line(MARGIN + prefixWidth, ctaY + 0.5, MARGIN + prefixWidth + linkWidth, ctaY + 0.5);
                 
                 doc.link(MARGIN + prefixWidth, ctaY - linkHeight, linkWidth, linkHeight, {
-                    url: 'https://legaliq.app/'
+                    url: appUrl
                 });
             }
 
@@ -522,70 +522,92 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                     <p className="text-sm text-gray-500 mt-2">{t('report_complexity_desc')}</p>
                 </Section>
 
-                <Section icon={<ScaleIcon className="w-6 h-6" />} title={t('report_swot_title')}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-lg bg-brand-gold/10 text-brand-gold">
+                            <ScaleIcon className="w-6 h-6" />
+                        </div>
+                        <h3 className="ml-4 text-xl font-bold text-brand-light">{t('report_swot_title')}</h3>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
                        <SwotCard title={t('swot_strengths')} items={swot.strengths} color="text-green-400" icon={<ThumbsUpIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
                        <SwotCard title={t('swot_weaknesses')} items={swot.weaknesses} color="text-yellow-400" icon={<ThumbsDownIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
                        <SwotCard title={t('swot_opportunities')} items={swot.opportunities} color="text-blue-400" icon={<LightbulbIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
                        <SwotCard title={t('swot_threats')} items={swot.threats} color="text-red-400" icon={<AlertTriangleIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
                     </div>
-                </Section>
+                </div>
                 
-                <Section icon={<AlertTriangleIcon className="w-6 h-6" />} title={t('report_redflags_title')}>
-                    {redFlags && redFlags.length > 0 ? (
-                        <ul className="space-y-4">
-                            {redFlags.map((flag, index) => (
-                                <li key={index} className="p-4 bg-red-900/30 border-l-4 border-red-500 rounded-r-md">
-                                    <div className="flex items-start">
-                                        <AlertTriangleIcon className="h-5 w-5 text-red-400 mt-1 flex-shrink-0"/>
-                                        <div className="ml-3 flex-1">
-                                            <h4 className="font-bold text-red-300">{flag.flag}</h4>
-                                            <p className="mt-1 text-gray-300 whitespace-pre-wrap">
-                                                <JargonExplainer text={flag.explanation} glossary={jargonGlossary} />
-                                            </p>
-                                            {flag.example && (
-                                                <p className="mt-2 text-red-200/90 whitespace-pre-wrap font-bold italic">
-                                                    {t('report_example_prefix')} {flag.example}
+                <div>
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-lg bg-brand-gold/10 text-brand-gold">
+                            <AlertTriangleIcon className="w-6 h-6" />
+                        </div>
+                        <h3 className="ml-4 text-xl font-bold text-brand-light">{t('report_redflags_title')}</h3>
+                    </div>
+                    <div className="mt-4">
+                        {redFlags && redFlags.length > 0 ? (
+                            <ul className="space-y-4">
+                                {redFlags.map((flag, index) => (
+                                    <li key={index} className="p-4 bg-red-900/30 border-l-4 border-red-500 rounded-r-md">
+                                        <div className="flex items-start">
+                                            <AlertTriangleIcon className="h-5 w-5 text-red-400 mt-1 flex-shrink-0"/>
+                                            <div className="ml-3 flex-1">
+                                                <h4 className="font-bold text-red-300">{flag.flag}</h4>
+                                                <p className="mt-1 text-gray-300 whitespace-pre-wrap">
+                                                    <JargonExplainer text={flag.explanation} glossary={jargonGlossary} />
                                                 </p>
-                                            )}
-                                            {flag.citation && (
-                                                <div className="mt-2 flex items-center gap-2 text-sm text-red-200/70">
-                                                    <DocumentTextIcon className="h-4 w-4" />
-                                                    <span className="font-semibold text-red-200">Source: <span className="font-normal">{flag.citation}</span></span>
-                                                </div>
-                                            )}
+                                                {flag.example && (
+                                                    <p className="mt-2 text-red-200/90 whitespace-pre-wrap font-bold italic">
+                                                        {t('report_example_prefix')} {flag.example}
+                                                    </p>
+                                                )}
+                                                {flag.citation && (
+                                                    <div className="mt-2 flex items-center gap-2 text-sm text-red-200/70">
+                                                        <DocumentTextIcon className="h-4 w-4" />
+                                                        <span className="font-semibold text-red-200">Source: <span className="font-normal">{flag.citation}</span></span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : <p className="text-gray-500 italic">{t('report_none_identified')}</p>}
-                </Section>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : <p className="text-gray-500 italic">{t('report_none_identified')}</p>}
+                    </div>
+                </div>
 
-                <Section icon={<HandshakeIcon className="w-6 h-6" />} title={t('report_negotiate_title')}>
-                     {negotiationPoints && negotiationPoints.length > 0 ? (
-                        <ul className="space-y-4">
-                            {negotiationPoints.map((point, index) => (
-                                <li key={index} className="p-4 bg-blue-900/30 border-l-4 border-blue-500 rounded-r-md">
-                                    <div className="flex items-start">
-                                        <HandshakeIcon className="h-5 w-5 text-blue-400 mt-1 flex-shrink-0"/>
-                                        <div className="ml-3">
-                                            <h4 className="font-bold text-blue-300">{point.point}</h4>
-                                            <p className="mt-1 text-gray-300 whitespace-pre-wrap">
-                                                <JargonExplainer text={point.explanation} glossary={jargonGlossary} />
-                                            </p>
-                                            {point.example && (
-                                                <p className="mt-2 text-blue-200/90 whitespace-pre-wrap font-bold italic">
-                                                    {t('report_example_prefix')} {point.example}
+                <div>
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-lg bg-brand-gold/10 text-brand-gold">
+                            <HandshakeIcon className="w-6 h-6" />
+                        </div>
+                        <h3 className="ml-4 text-xl font-bold text-brand-light">{t('report_negotiate_title')}</h3>
+                    </div>
+                    <div className="mt-4">
+                         {negotiationPoints && negotiationPoints.length > 0 ? (
+                            <ul className="space-y-4">
+                                {negotiationPoints.map((point, index) => (
+                                    <li key={index} className="p-4 bg-blue-900/30 border-l-4 border-blue-500 rounded-r-md">
+                                        <div className="flex items-start">
+                                            <HandshakeIcon className="h-5 w-5 text-blue-400 mt-1 flex-shrink-0"/>
+                                            <div className="ml-3">
+                                                <h4 className="font-bold text-blue-300">{point.point}</h4>
+                                                <p className="mt-1 text-gray-300 whitespace-pre-wrap">
+                                                    <JargonExplainer text={point.explanation} glossary={jargonGlossary} />
                                                 </p>
-                                            )}
+                                                {point.example && (
+                                                    <p className="mt-2 text-blue-200/90 whitespace-pre-wrap font-bold italic">
+                                                        {t('report_example_prefix')} {point.example}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : <p className="text-gray-500 italic">{t('report_none_identified_negotiate')}</p>}
-                </Section>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : <p className="text-gray-500 italic">{t('report_none_identified_negotiate')}</p>}
+                    </div>
+                </div>
             </div>
         </>
     );
