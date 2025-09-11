@@ -587,7 +587,6 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                     ) : <p className="text-gray-500 italic">{t('report_none_identified_negotiate')}</p>}
                 </Section>
             </div>
-            <div id="chat-anchor" className="h-1" />
         </>
     );
 };

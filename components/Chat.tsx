@@ -3,7 +3,7 @@ import { GoogleGenAI, Chat as GeminiChat } from '@google/genai';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
 import type { Language } from '../translations';
 import { 
-    ChatBubbleOvalLeftEllipsisIcon, 
+    LegalIqLogoIcon,
     XMarkIcon, 
     PaperAirplaneIcon, 
     SparklesIcon, 
@@ -23,39 +23,12 @@ export const Chat: React.FC<ChatProps> = ({ documentText }) => {
     const { t } = useTranslations();
     const { language } = useLanguage();
 
-    const [isButtonVisible, setIsButtonVisible] = useState(false);
     const [isChatOpen, setIsChatOpen] = useState(false);
-    
     const [messages, setMessages] = useState<Message[]>([]);
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const chat = useRef<GeminiChat | null>(null);
-    const chatAnchorRef = useRef<HTMLDivElement | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-    useEffect(() => {
-        const anchor = document.getElementById('chat-anchor');
-        if (anchor) {
-            chatAnchorRef.current = anchor as HTMLDivElement;
-        }
-
-        const handleScroll = () => {
-            if (chatAnchorRef.current) {
-                const rect = chatAnchorRef.current.getBoundingClientRect();
-                if (rect.top < window.innerHeight) {
-                    setIsButtonVisible(true);
-                }
-            } else {
-                 const fallbackScroll = window.scrollY > 800;
-                 if(fallbackScroll) setIsButtonVisible(true);
-            }
-        };
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll();
-
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     useEffect(() => {
         if (isChatOpen && documentText) {
@@ -66,14 +39,12 @@ export const Chat: React.FC<ChatProps> = ({ documentText }) => {
             }
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
-            const languageMap: Partial<Record<Language, string>> = { en: 'English', es: 'Spanish', ar: 'Arabic', zh: 'Chinese (Simplified)', hi: 'Hindi' };
-            const targetLanguage = languageMap[language] || 'English';
-
             const systemInstruction = `You are a helpful AI assistant named LegalIQ.app. You are having a conversation with a user about a legal document they have provided. Your goal is to answer their follow-up questions clearly and concisely.
+
+- **Crucially, you MUST detect the language of the user's query and respond in the EXACT same language and writing style.** This includes mixed languages like 'Hinglish' (e.g., if the user asks "Is contract ka time period kya hai?", you must respond in Hinglish like "Is contract ka time period 2 saal hai.").
 - Keep your answers short, crisp, and to the point. Avoid long paragraphs. Use bullet points if it helps with clarity.
-- Your responses MUST be in ${targetLanguage}.
 - Maintain the same tone and style as the user's query.
-- Base your answers STRICTLY on the content of the document provided below. Do not invent information or provide external legal advice. If the answer is not in the document, state that the information is not available in the provided text.
+- Base your answers STRICTLY on the content of the document provided below. Do not invent information or provide external legal advice. If the answer is not in the document, state that the information is not available in the provided text, but do so in the user's language.
 - Never suggest that you are a lawyer or that your answers constitute legal advice.
 
 HERE IS THE DOCUMENT:
@@ -96,7 +67,7 @@ ${documentText}
                 setMessages([{ role: 'model', text: "Failed to initialize the chat session." }]);
             }
         }
-    }, [isChatOpen, documentText, language]);
+    }, [isChatOpen, documentText]);
     
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -128,13 +99,13 @@ ${documentText}
     return (
         <>
             {/* Floating Chat Button */}
-            <div className={`fixed bottom-5 right-5 z-40 transition-all duration-300 ${isButtonVisible && !isChatOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
+            <div className={`fixed bottom-20 right-5 z-40 transition-all duration-300 ${!isChatOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}>
                 <button
                     onClick={() => setIsChatOpen(true)}
                     className="flex items-center gap-3 px-4 py-3 bg-brand-gold text-brand-dark rounded-full shadow-lg hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-gold transition-transform transform hover:scale-105"
                     aria-label={t('chat_button_label')}
                 >
-                    <ChatBubbleOvalLeftEllipsisIcon className="h-6 w-6" />
+                    <LegalIqLogoIcon className="h-6 w-6" />
                     <span className="font-semibold hidden sm:inline">{t('chat_button_label')}</span>
                 </button>
             </div>
