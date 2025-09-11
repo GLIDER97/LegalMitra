@@ -179,7 +179,7 @@ const App: React.FC = () => {
             )}
             
             {analysisResult && !isLoading && !isParsing && (
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full lg:w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <AnalysisReport result={analysisResult} fileName={fileName} setError={setError} />
                 </div>
             )}
