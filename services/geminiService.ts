@@ -56,11 +56,12 @@ const analysisSchema = {
         properties: {
             flag: { type: Type.STRING, description: "A concise summary of the potential red flag." },
             explanation: { type: Type.STRING, description: "A brief explanation of why this is a potential issue." },
-            citation: { type: Type.STRING, description: "The specific page number and section/subsection from the document where this red flag is located (e.g., 'Page 5, Section 3.2' or 'Page 2, Clause B'). If a precise location is not available, provide the best possible reference." }
+            citation: { type: Type.STRING, description: "The specific page number and section/subsection from the document where this red flag is located (e.g., 'Page 5, Section 3.2' or 'Page 2, Clause B'). If a precise location is not available, provide the best possible reference." },
+            example: { type: Type.STRING, description: "A simple, one-sentence example that illustrates the risk in a real-world scenario. For instance: 'If the roof leaks, this clause could mean you have to pay for the entire repair yourself.'" }
         },
         required: ["flag", "explanation", "citation"]
       },
-      description: "A list of common legal red flags found in the document, including citations to their location."
+      description: "A list of common legal red flags found in the document, including citations to their location and a simple example."
     },
     negotiationPoints: {
         type: Type.ARRAY,
@@ -68,14 +69,27 @@ const analysisSchema = {
             type: Type.OBJECT,
             properties: {
                 point: { type: Type.STRING, description: "A concise summary of the point to negotiate." },
-                explanation: { type: Type.STRING, description: "A brief explanation of what to ask for and why." }
+                explanation: { type: Type.STRING, description: "A brief explanation of what to ask for and why." },
+                example: { type: Type.STRING, description: "A simple, one-sentence example of what the user might say or ask for. For instance: 'You could say, I would like to add a clause stating that rent will not increase by more than 3% per year.'" }
             },
             required: ["point", "explanation"]
         },
-        description: "A list of actionable points the user can negotiate to improve the document's terms in their favor."
+        description: "A list of actionable points the user can negotiate to improve the document's terms in their favor, each with a simple example."
+    },
+    jargonGlossary: {
+      type: Type.ARRAY,
+      description: "A comprehensive list of all technical or legal jargon terms used in the analysis (summary, SWOT, red flags, explanations). For each term, provide a very simple, one-sentence definition suitable for a non-legal user.",
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          term: { type: Type.STRING, description: "The legal or technical term." },
+          definition: { type: Type.STRING, description: "The simple, easy-to-understand definition." }
+        },
+        required: ["term", "definition"]
+      }
     }
   },
-  required: ["documentTitle", "summary", "complexityScore", "swot", "redFlags", "negotiationPoints"]
+  required: ["documentTitle", "summary", "complexityScore", "swot", "redFlags", "negotiationPoints", "jargonGlossary"]
 };
 
 const languageMap: Partial<Record<Language, string>> = {
@@ -90,7 +104,7 @@ export const analyzeDocument = async (documentText: string, language: Language):
   const targetLanguage = languageMap[language] || 'English';
   
   const prompt = `
-    Analyze the following legal document. Provide a professional-grade, detailed analysis IN ${targetLanguage}. The entire JSON output, including all strings for summaries, flags, points, SWOT items, etc., must be written in ${targetLanguage}.
+    Analyze the following legal document. Provide a professional-grade, detailed analysis IN ${targetLanguage}. The entire JSON output, including all strings for summaries, flags, points, SWOT items, examples, jargon, etc., must be written in ${targetLanguage}.
 
     Your analysis must cover these areas:
     1.  **Document Title**: Identify the main title or heading from within the document's text. If no explicit title is present, generate a concise and descriptive title (5-10 words) based on the document's content.
@@ -101,7 +115,12 @@ export const analyzeDocument = async (documentText: string, language: Language):
         a. A clear title for the flag.
         b. An explanation of the associated risk.
         c. A precise citation, including the page number and section/subsection where the flag is located in the original document (e.g., "Page 5, Section 3.2" or "Page 2, Clause B"). This is mandatory.
-    6.  **Points to Negotiate**: A list of specific 'Points to Negotiate'. These should be actionable suggestions for improving the terms. For each point, provide a clear title (the 'point') and an 'explanation' of what to ask for and why it's beneficial.
+        d. A simple, relatable, one-sentence example that explains the risk in a real-world context for a non-legal user.
+    6.  **Points to Negotiate**: A list of specific 'Points to Negotiate'. These should be actionable suggestions for improving the terms. For each point, provide:
+        a. A clear title (the 'point').
+        b. An 'explanation' of what to ask for and why it's beneficial.
+        c. A simple, one-sentence example of what the user might say or ask for.
+    7.  **Jargon Glossary**: This is a critical step. Compile a comprehensive list of ALL technical or legal jargon terms used throughout your analysis (in the summary, SWOT points, red flag explanations, and negotiation point explanations). For each term, provide a very simple, one-sentence definition that anyone can understand. The goal is to demystify complex language for the user.
 
     Here is the document to analyze:
     ---
@@ -122,6 +141,12 @@ export const analyzeDocument = async (documentText: string, language: Language):
 
     const jsonText = response.text.trim();
     const parsedResult = JSON.parse(jsonText) as AnalysisResult;
+    
+    // Ensure jargonGlossary exists to prevent crashes downstream
+    if (!parsedResult.jargonGlossary) {
+      parsedResult.jargonGlossary = [];
+    }
+    
     return parsedResult;
   } catch (error) {
     console.error("Error calling Gemini API:", error);

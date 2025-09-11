@@ -9,11 +9,18 @@ export interface RedFlag {
   flag: string;
   explanation: string;
   citation: string;
+  example?: string;
 }
 
 export interface NegotiationPoint {
   point: string;
   explanation: string;
+  example?: string;
+}
+
+export interface JargonTerm {
+  term: string;
+  definition: string;
 }
 
 export interface AnalysisResult {
@@ -23,4 +30,5 @@ export interface AnalysisResult {
   complexityScore: number;
   summary: string;
   negotiationPoints: NegotiationPoint[];
+  jargonGlossary: JargonTerm[];
 }

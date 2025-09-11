@@ -28,7 +28,7 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://legaliq.app/">
-    <meta property="og:title" content="LegalIQ.app: Legal Clarity for Everyone">
+    <meta property="og:title" content="LegalIQ.app: Legal Clarity. Instantly.">
     <meta property="og:description" content="Instantly understand complex legal documents with our free AI analyzer. LegalIQ.app summarizes contracts, flags risks, and gives you negotiation points so you can sign with confidence.">
     <meta property="og:image" content="https://i.ibb.co/Rz0YJ7K/legaliq-social-preview.jpg">
     <meta property="og:site_name" content="LegalIQ.app">
@@ -36,7 +36,7 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://legaliq.app/">
-    <meta name="twitter:title" content="LegalIQ.app: Legal Clarity for Everyone">
+    <meta name="twitter:title" content="LegalIQ.app: Legal Clarity. Instantly.">
     <meta name="twitter:description" content="Instantly understand complex legal documents with our free AI analyzer. LegalIQ.app summarizes contracts, flags risks, and gives you negotiation points so you can sign with confidence.">
     <meta name="twitter:image" content="https://i.ibb.co/Rz0YJ7K/legaliq-social-preview.jpg">
 
@@ -96,6 +96,36 @@
       }
       .animate-fade-in-down {
         animation: fade-in-down 0.5s ease-out forwards;
+      }
+      
+      /* Tooltip Styles */
+      .tooltip-container .tooltip-text {
+        visibility: hidden;
+        opacity: 0;
+        transform: translateY(10px);
+        pointer-events: none;
+      }
+      .tooltip-container:hover .tooltip-text,
+      .tooltip-container:focus .tooltip-text,
+      .tooltip-container:focus-within .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .tooltip-text {
+        bottom: 140%; /* Position above the text */
+        left: 50%;
+        margin-left: -8rem; /* Center tooltip (width is 16rem/256px) */
+      }
+      .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #1E1E1E transparent transparent transparent;
       }
     </style>
   <script type="importmap">

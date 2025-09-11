@@ -1,6 +1,6 @@
 import React from 'react';
 import { jsPDF } from 'jspdf';
-import type { AnalysisResult } from '../types';
+import type { AnalysisResult, JargonTerm } from '../types';
 import { 
     DownloadIcon, 
     AlertTriangleIcon, 
@@ -22,6 +22,47 @@ interface AnalysisReportProps {
     setError: (error: { title: string; message: string } | null) => void;
 }
 
+const JargonExplainer: React.FC<{ text: string; glossary: JargonTerm[] }> = ({ text, glossary }) => {
+  if (!glossary || glossary.length === 0) {
+    return <>{text}</>;
+  }
+
+  // Sort glossary by term length, descending, to match longer phrases first
+  const sortedGlossary = [...glossary].sort((a, b) => b.term.length - a.term.length);
+
+  // Create a regex that finds any of the terms as whole words, case-insensitively
+  const termsRegex = new RegExp(
+    `\\b(${sortedGlossary.map(item => item.term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')).join('|')})\\b`,
+    'gi'
+  );
+
+  const parts = text.split(termsRegex);
+  
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (index % 2 === 1) { // This is a matched term
+          const term = part;
+          const definition = sortedGlossary.find(
+            item => item.term.toLowerCase() === term.toLowerCase()
+          )?.definition;
+          
+          return (
+            <span key={index} tabIndex={0} className="tooltip-container relative">
+              <span className="underline cursor-pointer italic focus:outline-none">{term}</span>
+              <span className="tooltip-text absolute z-10 w-64 p-3 text-sm leading-tight text-white bg-brand-card shadow-lg rounded-md border border-gray-700 transition-opacity duration-300">
+                {definition || 'No definition found.'}
+              </span>
+            </span>
+          );
+        }
+        return part; // This is a regular text part
+      })}
+    </>
+  );
+};
+
+
 const Section: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode }> = ({ icon, title, children }) => (
     <div className="bg-brand-card/50 p-6 rounded-lg shadow-lg border border-gray-800">
         <div className="flex items-center">
@@ -34,7 +75,7 @@ const Section: React.FC<{ icon: React.ReactNode; title: string; children: React.
     </div>
 );
 
-const SwotCard: React.FC<{ title: string; items: string[]; color: string; icon: React.ReactNode }> = ({ title, items, color, icon }) => {
+const SwotCard: React.FC<{ title: string; items: string[]; color: string; icon: React.ReactNode; glossary: JargonTerm[] }> = ({ title, items, color, icon, glossary }) => {
     const { t } = useTranslations();
     const borderColor = color.replace('text-', 'border-');
     const bgColor = color.replace('text-', 'bg-');
@@ -53,7 +94,7 @@ const SwotCard: React.FC<{ title: string; items: string[]; color: string; icon: 
                         {items.map((item, index) => (
                             <li key={index} className="flex items-start">
                                 <span className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 mr-3 ${bgColor}`}></span>
-                                <span className="flex-1">{item}</span>
+                                <span className="flex-1"><JargonExplainer text={item} glossary={glossary} /></span>
                             </li>
                         ))}
                     </ul>
@@ -67,7 +108,7 @@ const SwotCard: React.FC<{ title: string; items: string[]; color: string; icon: 
 export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName, setError }) => {
     const { t } = useTranslations();
     const { language } = useLanguage();
-    const { documentTitle, swot, redFlags, complexityScore, summary, negotiationPoints } = result;
+    const { documentTitle, swot, redFlags, complexityScore, summary, negotiationPoints, jargonGlossary } = result;
 
     const handleDownloadPdf = () => {
         try {
@@ -123,14 +164,74 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                 }
             };
 
-            const addText = (text: string | string[], options: any = {}, spacing: number = 7) => {
-                if (y > doc.internal.pageSize.getHeight() - MARGIN) {
-                    doc.addPage();
-                    y = MARGIN;
+            const addText = (text: string | string[], options: any = {}, spacing: number = 7, underlineJargon: boolean = true) => {
+                const textAsString = Array.isArray(text) ? text.join('\n') : text;
+                if (!textAsString.trim()) {
+                    y += spacing;
+                    return;
                 }
-                const lines = typeof text === 'string' ? doc.splitTextToSize(text, MAX_WIDTH) : text;
-                doc.text(lines, MARGIN, y, options);
-                y += (lines.length * (FONT_SIZE / 2.5)) + spacing;
+            
+                const lines = doc.splitTextToSize(textAsString, MAX_WIDTH);
+                
+                // Convert font size from points to mm and apply a multiplier for line height.
+                const fontSizeInMM = FONT_SIZE / doc.internal.scaleFactor;
+                const lineHeightMultiplier = isHindi ? 1.7 : 1.5;
+                const lineHeight = fontSizeInMM * lineHeightMultiplier;
+            
+                // Memoized regex creation
+                const getJargonRegex = (() => {
+                    let regex: RegExp | null = null;
+                    let isInitialized = false;
+                    return () => {
+                        if (isInitialized) return regex;
+                        isInitialized = true;
+                        if (!jargonGlossary || jargonGlossary.length === 0) return null;
+                        
+                        const sortedGlossary = [...jargonGlossary].sort((a, b) => b.term.length - a.term.length);
+                        const terms = sortedGlossary.map(item => item.term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')).filter(Boolean);
+                        
+                        if (terms.length > 0) {
+                            regex = new RegExp(`\\b(${terms.join('|')})\\b`, 'gi');
+                        }
+                        return regex;
+                    };
+                })();
+            
+                const jargonRegex = getJargonRegex();
+            
+                for (const line of lines) {
+                    if (y + lineHeight > doc.internal.pageSize.getHeight() - MARGIN) {
+                        doc.addPage();
+                        y = MARGIN;
+                    }
+            
+                    if (jargonRegex && underlineJargon) {
+                        const parts = line.split(jargonRegex);
+                        let currentX = MARGIN;
+            
+                        parts.forEach((part, index) => {
+                            if (!part) return;
+            
+                            const isJargon = index % 2 === 1;
+                            doc.text(part, currentX, y, options);
+                            const partWidth = doc.getTextWidth(part);
+            
+                            if (isJargon) {
+                                doc.setDrawColor(80, 80, 80);
+                                doc.setLineWidth(0.2);
+                                doc.line(currentX, y + 1.2, currentX + partWidth, y + 1.2); 
+                            }
+                            currentX += partWidth;
+                        });
+                    } else {
+                        doc.text(line, MARGIN, y, options);
+                    }
+                    y += lineHeight;
+                }
+                
+                if (spacing > 0) {
+                    y += spacing;
+                }
             };
 
             const addTitle = (text: string) => {
@@ -151,20 +252,35 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             
             const addListItem = (item: string) => addText(`• ${item}`, {}, 3);
             
-            const addFlagOrPoint = (item: { flag?: string, point?: string, explanation: string, citation?: string }) => {
+            const addFlagOrPoint = (item: { flag?: string, point?: string, explanation: string, citation?: string, example?: string }) => {
                 const title = item.flag || item.point || '';
                 const textLines = doc.splitTextToSize(title, MAX_WIDTH);
                 const explanationLines = doc.splitTextToSize(item.explanation, MAX_WIDTH);
+                const exampleLines = item.example ? doc.splitTextToSize(`${t('report_example_prefix')} ${item.example}`, MAX_WIDTH) : [];
                 const citationLines = item.citation ? doc.splitTextToSize(`Source: ${item.citation}`, MAX_WIDTH) : [];
 
-                if (y + (textLines.length + explanationLines.length + citationLines.length) * 5 > doc.internal.pageSize.getHeight() - MARGIN) {
+                if (y + (textLines.length + explanationLines.length + exampleLines.length + citationLines.length) * 5 > doc.internal.pageSize.getHeight() - MARGIN) {
                     doc.addPage();
                     y = MARGIN;
                 }
+                
                 setBold(true);
                 addText(title, {}, 2);
                 setBold(false);
-                addText(item.explanation, {}, item.citation ? 2 : 8);
+                addText(item.explanation, {}, 2);
+
+                if (item.example) {
+                    if (isHindi) {
+                        addText(`${t('report_example_prefix')} ${item.example}`, {}, item.citation ? 2 : 8);
+                    } else {
+                        doc.setFont(fontName, 'bolditalic');
+                        addText(`${t('report_example_prefix')} ${item.example}`, {}, item.citation ? 2 : 8);
+                        doc.setFont(fontName, 'normal');
+                    }
+                } else {
+                     y += item.citation ? 0 : 6;
+                }
+
 
                 if (item.citation) {
                     doc.setFontSize(FONT_SIZE - 2);
@@ -282,6 +398,24 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             addTitle(t('report_negotiate_title'));
             if (negotiationPoints.length > 0) negotiationPoints.forEach(item => addFlagOrPoint(item));
             else addText(t('report_none_identified_negotiate'));
+            
+            if (jargonGlossary && jargonGlossary.length > 0) {
+                addTitle(t('pdf_glossary_title'));
+                jargonGlossary.forEach(item => {
+                    const termLines = doc.splitTextToSize(item.term, MAX_WIDTH);
+                    const definitionLines = doc.splitTextToSize(item.definition, MAX_WIDTH);
+                    
+                    if (y + (termLines.length + definitionLines.length) * 6 > doc.internal.pageSize.getHeight() - MARGIN) {
+                        doc.addPage();
+                        y = MARGIN;
+                    }
+
+                    setBold(true);
+                    addText(item.term, {}, 2, false);
+                    setBold(false);
+                    addText(item.definition, {}, 8, false);
+                });
+            }
 
             // Footer
             const pageCount = doc.getNumberOfPages();
@@ -366,7 +500,9 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             </div>
 
             <Section icon={<DocumentTextIcon className="w-6 h-6" />} title={t('report_summary_title')}>
-                <p className="leading-relaxed whitespace-pre-wrap text-lg">{summary}</p>
+                <p className="leading-relaxed whitespace-pre-wrap text-lg">
+                    <JargonExplainer text={summary} glossary={jargonGlossary} />
+                </p>
             </Section>
 
             <Section icon={<ChartBarIcon className="w-6 h-6" />} title={t('report_complexity_title')}>
@@ -387,10 +523,10 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
 
             <Section icon={<ScaleIcon className="w-6 h-6" />} title={t('report_swot_title')}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <SwotCard title={t('swot_strengths')} items={swot.strengths} color="text-green-400" icon={<ThumbsUpIcon className="w-5 h-5"/>} />
-                   <SwotCard title={t('swot_weaknesses')} items={swot.weaknesses} color="text-yellow-400" icon={<ThumbsDownIcon className="w-5 h-5"/>} />
-                   <SwotCard title={t('swot_opportunities')} items={swot.opportunities} color="text-blue-400" icon={<LightbulbIcon className="w-5 h-5"/>} />
-                   <SwotCard title={t('swot_threats')} items={swot.threats} color="text-red-400" icon={<AlertTriangleIcon className="w-5 h-5"/>} />
+                   <SwotCard title={t('swot_strengths')} items={swot.strengths} color="text-green-400" icon={<ThumbsUpIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
+                   <SwotCard title={t('swot_weaknesses')} items={swot.weaknesses} color="text-yellow-400" icon={<ThumbsDownIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
+                   <SwotCard title={t('swot_opportunities')} items={swot.opportunities} color="text-blue-400" icon={<LightbulbIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
+                   <SwotCard title={t('swot_threats')} items={swot.threats} color="text-red-400" icon={<AlertTriangleIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
                 </div>
             </Section>
             
@@ -403,11 +539,18 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                                     <AlertTriangleIcon className="h-5 w-5 text-red-400 mt-1 flex-shrink-0"/>
                                     <div className="ml-3 flex-1">
                                         <h4 className="font-bold text-red-300">{flag.flag}</h4>
-                                        <p className="mt-1 text-gray-300 whitespace-pre-wrap">{flag.explanation}</p>
+                                        <p className="mt-1 text-gray-300 whitespace-pre-wrap">
+                                            <JargonExplainer text={flag.explanation} glossary={jargonGlossary} />
+                                        </p>
+                                        {flag.example && (
+                                            <p className="mt-2 text-red-200/90 whitespace-pre-wrap font-bold italic">
+                                                {t('report_example_prefix')} {flag.example}
+                                            </p>
+                                        )}
                                         {flag.citation && (
-                                            <div className="mt-2 flex items-center gap-2 text-xs text-red-200/70 italic">
+                                            <div className="mt-2 flex items-center gap-2 text-sm text-red-200/70">
                                                 <DocumentTextIcon className="h-4 w-4" />
-                                                <span>{flag.citation}</span>
+                                                <span className="font-semibold text-red-200">Source: <span className="font-normal">{flag.citation}</span></span>
                                             </div>
                                         )}
                                     </div>
@@ -427,7 +570,14 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                                     <HandshakeIcon className="h-5 w-5 text-blue-400 mt-1 flex-shrink-0"/>
                                     <div className="ml-3">
                                         <h4 className="font-bold text-blue-300">{point.point}</h4>
-                                        <p className="mt-1 text-gray-300 whitespace-pre-wrap">{point.explanation}</p>
+                                        <p className="mt-1 text-gray-300 whitespace-pre-wrap">
+                                            <JargonExplainer text={point.explanation} glossary={jargonGlossary} />
+                                        </p>
+                                        {point.example && (
+                                            <p className="mt-2 text-blue-200/90 whitespace-pre-wrap font-bold italic">
+                                                {t('report_example_prefix')} {point.example}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </li>

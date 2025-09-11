@@ -2,11 +2,11 @@ export type Language = 'en' | 'es' | 'ar' | 'zh' | 'hi';
 
 const commonTranslations = {
     tagline: {
-        en: 'Legal Clarity for Everyone',
-        es: 'Claridad Legal para Todos',
-        ar: 'وضوح قانوني للجميع',
-        zh: '人人都能看懂的法律',
-        hi: 'कानूनी स्पष्टता सबके लिए',
+        en: 'Legal Clarity. Instantly.',
+        es: 'Claridad Legal. Al Instante.',
+        ar: 'وضوح قانوني. فوراً.',
+        zh: '法律清晰。即刻。',
+        hi: 'कानूनी स्पष्टता। तुरंत।',
     },
     footer_copyright: {
         en: 'LegalIQ.app. All rights reserved.',
@@ -85,7 +85,7 @@ const commonTranslations = {
         es: "La IA no pudo procesar el documento. Esto puede ocurrir a veces debido a un alto tráfico o a una estructura inusual del documento. Por favor, inténtalo de nuevo en un momento.",
         ar: "لم يتمكن الذكاء الاصطناعي من معالجة المستند. قد يحدث هذا أحيانًا بسبب حركة المرور العالية أو بنية المستند غير العادية. يرجى المحاولة مرة أخرى بعد لحظات.",
         zh: "AI 无法处理该文档。这有时可能是由于流量过大或文档结构异常造成的。请稍后重试。",
-        hi: "AI दस्तावेज़ को संसाधित करने में असमर्थ था। यह कभी-कभी उच्च ट्रैफ़िक या एक असामान्य दस्तावेज़ संरचना के कारण हो सकता है। कृपया थोड़ी देर में पुनः प्रयास करें।",
+        hi: "AI दस्तावेज़ को संसाधित करने में असमर्थ था। यह कभी-kadang उच्च ट्रैफ़िक या एक असामान्य दस्तावेज़ संरचना के कारण हो सकता है। कृपया थोड़ी देर में पुनः प्रयास करें।",
     },
     error_pdf_hindi_title: {
         en: "Hindi PDF Generation Failed",
@@ -221,6 +221,13 @@ const commonTranslations = {
         zh: '未发现具体的可谈判要点。',
         hi: 'बातचीत के लिए कोई विशिष्ट बिंदु नहीं पहचाने गए।',
     },
+    report_example_prefix: {
+        en: 'Example:',
+        es: 'Ejemplo:',
+        ar: 'مثال:',
+        zh: '例如:',
+        hi: 'उदाहरण:',
+    },
     // PDF
     pdf_analysis_by: {
         en: 'Analysis by LegalIQ.app',
@@ -254,6 +261,13 @@ const commonTranslations = {
         ar: 'لـ',
         zh: '关于',
         hi: 'के लिए',
+    },
+    pdf_glossary_title: {
+        en: 'Glossary of Terms',
+        es: 'Glosario de Términos',
+        ar: 'مسرد المصطلحات',
+        zh: '术语表',
+        hi: 'शब्दावली',
     },
 };
 
@@ -626,7 +640,7 @@ const testimonialsSection = {
         es: "Como artista, mi sustento depende de licenciar mi trabajo correctamente. Casi acepté un acuerdo con una tasa de regalías muy por debajo del estándar de la industria. El análisis de LegalIQ.app me dio los datos que necesitaba para negociar un acuerdo mucho mejor y más justo. Es empoderador para los creadores.",
         ar: "كفنان، يعتمد سبل عيشي على ترخيص عملي بشكل صحيح. كدت أوافق على صفقة بمعدل إتاوة أقل بكثير من معيار الصناعة. أعطاني تحليل LegalIQ.app البيانات التي أحتاجها للتفاوض على صفقة أفضل وأكثر عدلاً. إنه تمكين للمبدعين.",
         zh: "作为一名艺术家，我的生计取决于正确地授权我的作品。我差点就同意了一项版税率远低于行业标准的交易。LegalIQ.app 的分析为我提供了所需的数据，以谈判达成一个更好、更公平的交易。它为创作者赋能。",
-        hi: "एक कलाकार के रूप में, मेरी आजीविका मेरे काम को सही ढंग से लाइसेंस देने पर निर्भर करती है। मैंने लगभग एक ऐसे सौदे के लिए सहमति दे दी थी जिसमें रॉयल्टी दर उद्योग मानक से बहुत कम थी। लीगलआईक्यू.ऐप के विश्लेषण ने मुझे एक बेहतर, निष्पक्ष सौदे के लिए बातचीत करने के लिए आवश्यक डेटा दिया। यह रचनाकारों के लिए सशक्त है।",
+        hi: "एक कलाकार के रूप में, मेरी आजीविका मेरे काम को सही ढंग से लाइसेंस देने पर निर्भर करती है। मैंने लगभग एक ऐसे सौदे के लिए सहमति दे दी थी जिसमें रॉयalty दर उद्योग मानक से बहुत कम थी। लीगलआईक्यू.ऐप के विश्लेषण ने मुझे एक बेहतर, निष्पक्ष सौदे के लिए बातचीत करने के लिए आवश्यक डेटा दिया। यह रचनाकारों के लिए सशक्त है।",
     },
     testimonial_6_name: {
         en: "Chloe B.",
@@ -1078,7 +1092,7 @@ const blogContentSection = {
     blog_li_g1_t: {
         en: "Simply drag and drop your legal document onto the platform.",
         es: "Simplemente arrastre y suelte su documento legal en la plataforma.",
-        ar: "मा عليك سوى سحب وإفلات مستندك القانوني على المنصة.",
+        ar: "ما عليك سوى سحب وإفلات مستندك القانوني على المنصة.",
         zh: "只需将您的法律文件拖放到平台上即可。",
         hi: "बस अपने कानूनी दस्तावेज़ को प्लेटफ़ॉर्म पर खींचें और छोड़ें।",
     },
