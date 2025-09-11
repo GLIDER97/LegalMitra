@@ -486,105 +486,108 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
     const complexityInfo = getComplexityInfo(complexityScore);
 
     return (
-        <div className="bg-brand-card/30 p-4 sm:p-8 rounded-2xl border border-gray-800 shadow-2xl space-y-10">
-            <div className="text-center">
-                <h2 className="text-2xl sm:text-3xl font-bold text-brand-light">{t('report_title')}</h2>
-                <p className="mt-2 text-brand-gold">{t('report_subtitle')}</p>
-                <button 
-                    onClick={handleDownloadPdf}
-                    className="mt-6 inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-brand-dark bg-brand-gold hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-gold transition-all"
-                >
-                    <DownloadIcon className="h-5 w-5" />
-                    {t('report_download_button')}
-                </button>
-            </div>
+        <>
+            <div className="bg-brand-card/30 p-4 sm:p-8 rounded-2xl border border-gray-800 shadow-2xl space-y-10">
+                <div className="text-center">
+                    <h2 className="text-2xl sm:text-3xl font-bold text-brand-light">{t('report_title')}</h2>
+                    <p className="mt-2 text-brand-gold">{t('report_subtitle')}</p>
+                    <button 
+                        onClick={handleDownloadPdf}
+                        className="mt-6 inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-brand-dark bg-brand-gold hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-gold transition-all"
+                    >
+                        <DownloadIcon className="h-5 w-5" />
+                        {t('report_download_button')}
+                    </button>
+                </div>
 
-            <Section icon={<DocumentTextIcon className="w-6 h-6" />} title={t('report_summary_title')}>
-                <p className="leading-relaxed whitespace-pre-wrap text-lg">
-                    <JargonExplainer text={summary} glossary={jargonGlossary} />
-                </p>
-            </Section>
+                <Section icon={<DocumentTextIcon className="w-6 h-6" />} title={t('report_summary_title')}>
+                    <p className="leading-relaxed whitespace-pre-wrap text-lg">
+                        <JargonExplainer text={summary} glossary={jargonGlossary} />
+                    </p>
+                </Section>
 
-            <Section icon={<ChartBarIcon className="w-6 h-6" />} title={t('report_complexity_title')}>
-                <div className="flex flex-col sm:flex-row items-center gap-4">
-                    <div className="w-full flex items-center gap-4">
-                        <span className={`text-2xl font-bold ${complexityInfo.color}`}>{complexityScore}/10</span>
-                        <div className="w-full bg-gray-700 rounded-full h-4 relative">
-                            <div 
-                                className={`h-4 rounded-full transition-all duration-500 ${complexityInfo.color.replace('text-','bg-')}`} 
-                                style={{ width: `${complexityScore * 10}%`}}
-                            ></div>
+                <Section icon={<ChartBarIcon className="w-6 h-6" />} title={t('report_complexity_title')}>
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div className="w-full flex items-center gap-4">
+                            <span className={`text-2xl font-bold ${complexityInfo.color}`}>{complexityScore}/10</span>
+                            <div className="w-full bg-gray-700 rounded-full h-4 relative">
+                                <div 
+                                    className={`h-4 rounded-full transition-all duration-500 ${complexityInfo.color.replace('text-','bg-')}`} 
+                                    style={{ width: `${complexityScore * 10}%`}}
+                                ></div>
+                            </div>
                         </div>
+                        <span className={`text-lg font-semibold ${complexityInfo.color} w-full sm:w-36 text-left sm:text-right mt-2 sm:mt-0`}>{complexityInfo.text}</span>
                     </div>
-                    <span className={`text-lg font-semibold ${complexityInfo.color} w-full sm:w-36 text-left sm:text-right mt-2 sm:mt-0`}>{complexityInfo.text}</span>
-                </div>
-                <p className="text-sm text-gray-500 mt-2">{t('report_complexity_desc')}</p>
-            </Section>
+                    <p className="text-sm text-gray-500 mt-2">{t('report_complexity_desc')}</p>
+                </Section>
 
-            <Section icon={<ScaleIcon className="w-6 h-6" />} title={t('report_swot_title')}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <SwotCard title={t('swot_strengths')} items={swot.strengths} color="text-green-400" icon={<ThumbsUpIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
-                   <SwotCard title={t('swot_weaknesses')} items={swot.weaknesses} color="text-yellow-400" icon={<ThumbsDownIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
-                   <SwotCard title={t('swot_opportunities')} items={swot.opportunities} color="text-blue-400" icon={<LightbulbIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
-                   <SwotCard title={t('swot_threats')} items={swot.threats} color="text-red-400" icon={<AlertTriangleIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
-                </div>
-            </Section>
-            
-            <Section icon={<AlertTriangleIcon className="w-6 h-6" />} title={t('report_redflags_title')}>
-                {redFlags && redFlags.length > 0 ? (
-                    <ul className="space-y-4">
-                        {redFlags.map((flag, index) => (
-                            <li key={index} className="p-4 bg-red-900/30 border-l-4 border-red-500 rounded-r-md">
-                                <div className="flex items-start">
-                                    <AlertTriangleIcon className="h-5 w-5 text-red-400 mt-1 flex-shrink-0"/>
-                                    <div className="ml-3 flex-1">
-                                        <h4 className="font-bold text-red-300">{flag.flag}</h4>
-                                        <p className="mt-1 text-gray-300 whitespace-pre-wrap">
-                                            <JargonExplainer text={flag.explanation} glossary={jargonGlossary} />
-                                        </p>
-                                        {flag.example && (
-                                            <p className="mt-2 text-red-200/90 whitespace-pre-wrap font-bold italic">
-                                                {t('report_example_prefix')} {flag.example}
+                <Section icon={<ScaleIcon className="w-6 h-6" />} title={t('report_swot_title')}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       <SwotCard title={t('swot_strengths')} items={swot.strengths} color="text-green-400" icon={<ThumbsUpIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
+                       <SwotCard title={t('swot_weaknesses')} items={swot.weaknesses} color="text-yellow-400" icon={<ThumbsDownIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
+                       <SwotCard title={t('swot_opportunities')} items={swot.opportunities} color="text-blue-400" icon={<LightbulbIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
+                       <SwotCard title={t('swot_threats')} items={swot.threats} color="text-red-400" icon={<AlertTriangleIcon className="w-5 h-5"/>} glossary={jargonGlossary} />
+                    </div>
+                </Section>
+                
+                <Section icon={<AlertTriangleIcon className="w-6 h-6" />} title={t('report_redflags_title')}>
+                    {redFlags && redFlags.length > 0 ? (
+                        <ul className="space-y-4">
+                            {redFlags.map((flag, index) => (
+                                <li key={index} className="p-4 bg-red-900/30 border-l-4 border-red-500 rounded-r-md">
+                                    <div className="flex items-start">
+                                        <AlertTriangleIcon className="h-5 w-5 text-red-400 mt-1 flex-shrink-0"/>
+                                        <div className="ml-3 flex-1">
+                                            <h4 className="font-bold text-red-300">{flag.flag}</h4>
+                                            <p className="mt-1 text-gray-300 whitespace-pre-wrap">
+                                                <JargonExplainer text={flag.explanation} glossary={jargonGlossary} />
                                             </p>
-                                        )}
-                                        {flag.citation && (
-                                            <div className="mt-2 flex items-center gap-2 text-sm text-red-200/70">
-                                                <DocumentTextIcon className="h-4 w-4" />
-                                                <span className="font-semibold text-red-200">Source: <span className="font-normal">{flag.citation}</span></span>
-                                            </div>
-                                        )}
+                                            {flag.example && (
+                                                <p className="mt-2 text-red-200/90 whitespace-pre-wrap font-bold italic">
+                                                    {t('report_example_prefix')} {flag.example}
+                                                </p>
+                                            )}
+                                            {flag.citation && (
+                                                <div className="mt-2 flex items-center gap-2 text-sm text-red-200/70">
+                                                    <DocumentTextIcon className="h-4 w-4" />
+                                                    <span className="font-semibold text-red-200">Source: <span className="font-normal">{flag.citation}</span></span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                ) : <p className="text-gray-500 italic">{t('report_none_identified')}</p>}
-            </Section>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-gray-500 italic">{t('report_none_identified')}</p>}
+                </Section>
 
-            <Section icon={<HandshakeIcon className="w-6 h-6" />} title={t('report_negotiate_title')}>
-                 {negotiationPoints && negotiationPoints.length > 0 ? (
-                    <ul className="space-y-4">
-                        {negotiationPoints.map((point, index) => (
-                            <li key={index} className="p-4 bg-blue-900/30 border-l-4 border-blue-500 rounded-r-md">
-                                <div className="flex items-start">
-                                    <HandshakeIcon className="h-5 w-5 text-blue-400 mt-1 flex-shrink-0"/>
-                                    <div className="ml-3">
-                                        <h4 className="font-bold text-blue-300">{point.point}</h4>
-                                        <p className="mt-1 text-gray-300 whitespace-pre-wrap">
-                                            <JargonExplainer text={point.explanation} glossary={jargonGlossary} />
-                                        </p>
-                                        {point.example && (
-                                            <p className="mt-2 text-blue-200/90 whitespace-pre-wrap font-bold italic">
-                                                {t('report_example_prefix')} {point.example}
+                <Section icon={<HandshakeIcon className="w-6 h-6" />} title={t('report_negotiate_title')}>
+                     {negotiationPoints && negotiationPoints.length > 0 ? (
+                        <ul className="space-y-4">
+                            {negotiationPoints.map((point, index) => (
+                                <li key={index} className="p-4 bg-blue-900/30 border-l-4 border-blue-500 rounded-r-md">
+                                    <div className="flex items-start">
+                                        <HandshakeIcon className="h-5 w-5 text-blue-400 mt-1 flex-shrink-0"/>
+                                        <div className="ml-3">
+                                            <h4 className="font-bold text-blue-300">{point.point}</h4>
+                                            <p className="mt-1 text-gray-300 whitespace-pre-wrap">
+                                                <JargonExplainer text={point.explanation} glossary={jargonGlossary} />
                                             </p>
-                                        )}
+                                            {point.example && (
+                                                <p className="mt-2 text-blue-200/90 whitespace-pre-wrap font-bold italic">
+                                                    {t('report_example_prefix')} {point.example}
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                ) : <p className="text-gray-500 italic">{t('report_none_identified_negotiate')}</p>}
-            </Section>
-        </div>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : <p className="text-gray-500 italic">{t('report_none_identified_negotiate')}</p>}
+                </Section>
+            </div>
+            <div id="chat-anchor" className="h-1" />
+        </>
     );
 };

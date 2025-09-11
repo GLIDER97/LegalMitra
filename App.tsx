@@ -20,6 +20,7 @@ import { ErrorPopup } from './components/ErrorPopup';
 import { LanguagePrompt } from './components/LanguagePrompt';
 import { BlogContent } from './components/BlogContent';
 import { FeaturedOn } from './components/Loader';
+import { Chat } from './components/Chat';
 
 
 const PDF_WORKER_URL = 'https://aistudiocdn.com/pdfjs-dist@^4.4.170/build/pdf.worker.min.mjs';
@@ -187,6 +188,7 @@ const App: React.FC = () => {
       <LanguageSwitcher />
       <FeedbackButton />
       <LanguagePrompt />
+      {analysisResult && !isLoading && !isParsing && <Chat documentText={documentText} />}
     </div>
   );
 };

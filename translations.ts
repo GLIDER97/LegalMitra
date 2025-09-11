@@ -284,7 +284,7 @@ const emotionalCopy = {
         es: "Desde seguros de salud hasta contratos de trabajo o alquiler, la letra pequeña puede ocultar riesgos que cambian la vida. LegalIQ.app simplifica documentos complejos en información clara, para que pueda firmar con confianza.",
         ar: "من التأمين الصحي إلى عقود العمل أو الإيجار، يمكن أن تخفي التفاصيل الدقيقة مخاطر تغير حياتك. يبسط LegalIQ.app المستندات المعقدة إلى رؤى واضحة، حتى تتمكن من التوقيع بثقة.",
         zh: "从健康保险到工作或租赁合同，细则中可能隐藏着改变人生的风险。LegalIQ.app 将复杂的文件简化为清晰的见解，因此您可以放心签署。",
-        hi: "स्वास्थ्य बीमा से लेकर नौकरी या किराये के अनुबंध तक, छोटे अक्षरों में जीवन बदलने वाले जोखिम छिपे हो सकते हैं। LegalIQ.app जटिल दस्तावेजों को स्पष्ट अंतर्दृष्टि में सरल बनाता है, ताकि आप आत्मविश्वास से हस्ताक्षर कर सकें।",
+        hi: "स्वास्थ्य बीमा से लेकर नौकरी या किराये के अनुबंध तक, छोटे अक्षरों में जीवन बदलने वाले जोखिम छिपे हो सकते हैं।LegalIQ.app जटिल दस्तावेजों को स्पष्ट अंतर्दृष्टि में सरल बनाता है, ताकि आप आत्मविश्वास से हस्ताक्षर कर सकें।",
     },
     upload_cta: {
         en: "Secure Your Future. Analyze Your Document Now.",
@@ -742,7 +742,7 @@ const useCasesSection = {
         es: "El nuevo contrato de alquiler de María tenía una cláusula que la hacía responsable de todas las reparaciones de electrodomésticos. LegalIQ.app señaló esta costosa trampa, permitiéndole negociarla y evitar potencialmente miles en costos inesperados.",
         ar: "كان عقد إيجار ماريا الجديد يحتوي على بند يجعلها مسؤولة عن جميع إصلاحات الأجهزة. أشار LegalIQ.app إلى هذا الفخ المكلف، مما سمح لها بالتفاوض عليه وتجنب آلاف التكاليف غير المتوقعة المحتملة.",
         zh: "玛丽亚的新租约中有一项条款，规定她要负责所有电器的维修。LegalIQ.app 标记了这个代价高昂的陷阱，使她能够通过谈判将其排除，从而避免了数千美元的意外费用。",
-        hi: "मारिया के नए पट्टे में एक क्लॉज था जो उसे सभी उपकरणों की मरम्मत के लिए जिम्मेदार बनाता था। लीगलआईक्यू.ऐप ने इस महंगे जाल को हरी झंडी दिखाई, जिससे वह इस पर बातचीत कर सकी और हजारों की अप्रत्याशित लागत से बच सकी।",
+        hi: "मारिया के नए पट्टे में एक क्लॉज था जो उसे सभी उपकरणों की मरम्मत के लिए जिम्मेदार बनाता था। लीगलआईक्यू.ऐप ने इस महंगे जाल को हरी झंडी दिखाई, जिससे वह इस पर बातचीत कर सकी और हजारों की अप्रत्याशोषित लागत से बच सकी।",
     },
     use_cases_2_title: { en: "Employees", es: "Empleados", ar: "الموظفون", zh: "员工", hi: "कर्मचारी" },
     use_cases_2_desc: { 
@@ -1129,8 +1129,39 @@ const blogContentSection = {
     },
 };
 
+const chatSection = {
+    chat_button_label: {
+        en: "Ask Follow-up Question",
+        es: "Hacer Pregunta de Seguimiento",
+        ar: "اطرح سؤال متابعة",
+        zh: "提出后续问题",
+        hi: "अनुवर्ती प्रश्न पूछें",
+    },
+    chat_welcome_message: {
+        en: "Hi, what do you want to ask about your document? LegalIQ.app will help you.",
+        es: "Hola, ¿qué quieres preguntar sobre tu documento? LegalIQ.app te ayudará.",
+        ar: "مرحبًا، ماذا تريد أن تسأل عن مستندك؟ سيساعدك LegalIQ.app.",
+        zh: "您好，关于您的文件您想问些什么？LegalIQ.app 将帮助您。",
+        hi: "नमस्ते, आप अपने दस्तावेज़ के बारे में क्या पूछना चाहते हैं? LegalIQ.app आपकी मदद करेगा।",
+    },
+    chat_disclaimer: {
+        en: "Disclaimer: This is an AI assistant and not a substitute for professional legal advice.",
+        es: "Aviso: Este es un asistente de IA y no sustituye el asesoramiento legal profesional.",
+        ar: "إخلاء مسؤولية: هذا مساعد ذكاء اصطناعي وليس بديلاً عن الاستشارة القانونية المتخصصة.",
+        zh: "免责声明：这是一个AI助手，不能替代专业的法律建议。",
+        hi: "अस्वीकरण: यह एक एआई सहायक है और पेशेवर कानूनी सलाह का विकल्प नहीं है।",
+    },
+    chat_input_placeholder: {
+        en: "Type your question here...",
+        es: "Escribe tu pregunta aquí...",
+        ar: "اكتب سؤالك هنا...",
+        zh: "在此输入您的问题...",
+        hi: "अपना प्रश्न यहाँ लिखें...",
+    },
+};
 
-export type TranslationKeys = keyof typeof commonTranslations | keyof typeof emotionalCopy | keyof typeof trustSection | keyof typeof testimonialsSection | keyof typeof useCasesSection | keyof typeof faqSection | keyof typeof languagePromptSection | keyof typeof blogContentSection;
+
+export type TranslationKeys = keyof typeof commonTranslations | keyof typeof emotionalCopy | keyof typeof trustSection | keyof typeof testimonialsSection | keyof typeof useCasesSection | keyof typeof faqSection | keyof typeof languagePromptSection | keyof typeof blogContentSection | keyof typeof chatSection;
 
 type Translations = {
   [key in Language]: {
@@ -1142,7 +1173,7 @@ type Translations = {
 // to a per-language key mapping to match the expected `Translations` type.
 // This also removes an incorrect proxy implementation that was causing type errors.
 const languages: Language[] = ['en', 'es', 'ar', 'zh', 'hi'];
-const allTranslationSources = { ...commonTranslations, ...emotionalCopy, ...trustSection, ...testimonialsSection, ...useCasesSection, ...faqSection, ...languagePromptSection, ...blogContentSection };
+const allTranslationSources = { ...commonTranslations, ...emotionalCopy, ...trustSection, ...testimonialsSection, ...useCasesSection, ...faqSection, ...languagePromptSection, ...blogContentSection, ...chatSection };
 
 const generatedTranslations = {} as Translations;
 
