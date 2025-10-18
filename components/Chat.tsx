@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { GoogleGenAI, Chat as GeminiChat } from '@google/genai';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
-import type { Language } from '../translations';
+import type { Message } from '../types';
 import { 
     ChatBubbleOvalLeftEllipsisIcon,
     XMarkIcon, 
@@ -12,29 +12,25 @@ import {
 
 interface ChatProps {
     documentText: string;
+    messages: Message[];
+    setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
-interface Message {
-    role: 'user' | 'model';
-    text: string;
-}
-
-export const Chat: React.FC<ChatProps> = ({ documentText }) => {
+export const Chat: React.FC<ChatProps> = ({ documentText, messages, setMessages }) => {
     const { t } = useTranslations();
     const { language } = useLanguage();
 
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [messages, setMessages] = useState<Message[]>([]);
     const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const chat = useRef<GeminiChat | null>(null);
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        if (isChatOpen && documentText) {
+        if (isChatOpen && documentText && !chat.current) {
             if (!process.env.API_KEY) {
                 console.error("API_KEY not set");
-                setMessages([{ role: 'model', text: "Configuration error: API Key is missing." }]);
+                setMessages(prev => [...prev, { role: 'model', text: "Configuration error: API Key is missing." }]);
                 return;
             }
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -63,13 +59,12 @@ ${documentText}
                         temperature: 0.3,
                     }
                 });
-                setMessages([]);
             } catch (error) {
                 console.error("Error initializing chat:", error);
-                setMessages([{ role: 'model', text: "Failed to initialize the chat session." }]);
+                setMessages(prev => [...prev, { role: 'model', text: "Failed to initialize the chat session." }]);
             }
         }
-    }, [isChatOpen, documentText]);
+    }, [isChatOpen, documentText, setMessages]);
     
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

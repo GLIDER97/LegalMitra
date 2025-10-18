@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslations } from '../hooks/useTranslations';
+import type { AnalysisResult } from '../types';
 import { 
     UploadIcon, 
     DocumentTextIcon, 
@@ -17,8 +18,10 @@ interface HeroProps {
   setFileName: (name: string) => void;
   isParsing: boolean;
   isLoading: boolean;
+  analysisResult: AnalysisResult | null;
   handleFile: (file: File) => void;
   handleAnalyze: () => void;
+  ocrStatus: string;
 }
 
 export const Hero: React.FC<HeroProps> = ({
@@ -28,8 +31,10 @@ export const Hero: React.FC<HeroProps> = ({
   setFileName,
   isParsing,
   isLoading,
+  analysisResult,
   handleFile,
   handleAnalyze,
+  ocrStatus,
 }) => {
   const { t } = useTranslations();
   const [isDragging, setIsDragging] = useState(false);
@@ -110,9 +115,15 @@ export const Hero: React.FC<HeroProps> = ({
         textAreaRef.current.blur();
     }
   };
+  
+  const isAnalyzed = analysisResult && Object.keys(analysisResult).length > 0;
 
-  const heroTitle = t('hero_title');
-  const titleParts = heroTitle.split('LegalIQ.app');
+  const getButtonText = () => {
+    if (isParsing) return t('loader_parsing');
+    if (isLoading) return t('loader_analyzing');
+    if (isAnalyzed) return t('upload_analysis_done_button');
+    return t('upload_analyze_button');
+  };
 
   return (
      <section id="upload" className="py-12 sm:py-20 relative overflow-hidden bg-brand-dark">
@@ -125,17 +136,11 @@ export const Hero: React.FC<HeroProps> = ({
         ></div>
         
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-brand-light tracking-tight">
-              {titleParts.length > 1 ? (
-                <>
-                  Legal<span style={{ color: '#D4AF37' }}>IQ</span>.app
-                  {titleParts[1]}
-                </>
-              ) : (
-                heroTitle
-              )}
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-brand-light tracking-tight uppercase">
+              {t('hero_title')}
             </h2>
-            <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg text-gray-300">{t('hero_subtitle')}</p>
+            <p className="mt-6 max-w-2xl mx-auto text-lg sm:text-xl text-brand-gold font-semibold">{t('hero_subheadline_new')}</p>
+            <p className="mt-2 max-w-2xl mx-auto text-base sm:text-lg text-gray-300">{t('hero_subtitle')}</p>
             
             <div className="mt-10 max-w-2xl mx-auto bg-brand-card/50 backdrop-blur-sm p-4 sm:p-8 rounded-2xl shadow-2xl border border-gray-800">
               <div 
@@ -155,7 +160,7 @@ export const Hero: React.FC<HeroProps> = ({
                       )}
                     </div>
                     <span className="mt-4 block text-base font-semibold text-brand-light">
-                        {isParsing ? t('loader_parsing') : t('upload_cta')}
+                        {ocrStatus || (isParsing ? t('loader_parsing') : t('upload_cta'))}
                     </span>
                     <span className="mt-1 block text-sm text-gray-400">
                         {/* Use a non-breaking space to maintain height during parsing */}
@@ -251,15 +256,15 @@ export const Hero: React.FC<HeroProps> = ({
               <div className="mt-6">
                 <button
                   onClick={handleAnalyze}
-                  disabled={isParsing || isLoading || !documentText.trim()}
+                  disabled={isParsing || isLoading || !documentText.trim() || isAnalyzed}
                   className="w-full inline-flex items-center justify-center px-6 py-3 sm:py-4 border border-transparent text-base font-medium rounded-md shadow-sm text-brand-dark bg-brand-gold hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-dark focus:ring-brand-gold disabled:bg-gray-600 disabled:text-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-105"
                 >
-                  {isLoading ? (
+                  {isLoading || isParsing ? (
                     <SpinnerIcon className="h-5 w-5 mr-3 animate-spin" />
                   ) : (
                     <DocumentTextIcon className="h-5 w-5 mr-3" />
                   )}
-                  {isParsing ? t('loader_parsing') : (isLoading ? t('loader_analyzing') : t('upload_analyze_button'))}
+                  {getButtonText()}
                 </button>
               </div>
             </div>

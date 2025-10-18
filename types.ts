@@ -24,11 +24,22 @@ export interface JargonTerm {
 }
 
 export interface AnalysisResult {
-  documentTitle: string;
-  swot: SwotAnalysis;
-  redFlags: RedFlag[];
-  complexityScore: number;
-  summary: string;
-  negotiationPoints: NegotiationPoint[];
-  jargonGlossary: JargonTerm[];
+  documentTitle?: string;
+  swot?: SwotAnalysis;
+  redFlags?: RedFlag[];
+  complexityScore?: number;
+  summary?: string;
+  negotiationPoints?: NegotiationPoint[];
+  jargonGlossary?: JargonTerm[];
+}
+
+// Add a type for section-specific errors
+export type SectionError = {
+    section: keyof AnalysisResult;
+    message: string;
+}
+
+export interface Message {
+  role: 'user' | 'model';
+  text: string;
 }

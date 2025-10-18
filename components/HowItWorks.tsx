@@ -2,7 +2,8 @@ import React from 'react';
 import { useTranslations } from '../hooks/useTranslations';
 import { TranslateIcon, ShieldCheckIcon, BoltIcon, DocumentTextIcon } from './Icons';
 
-const Feature = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
+// FIX: Explicitly type Feature as React.FC to resolve issue with props spreading.
+const Feature: React.FC<{ icon: React.ReactNode, title: string, description: string }> = ({ icon, title, description }) => (
     <div className="bg-brand-card p-6 rounded-lg shadow-lg border border-gray-800 text-center transition-transform transform hover:-translate-y-1">
         <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-brand-gold/10 text-brand-gold mx-auto">
             {icon}

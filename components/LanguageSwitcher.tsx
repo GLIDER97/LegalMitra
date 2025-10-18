@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../hooks/useTranslations';
 import { TranslateIcon } from './Icons';
 import { Language } from '../translations';
@@ -6,6 +6,16 @@ import { Language } from '../translations';
 export const LanguageSwitcher: React.FC = () => {
   const { language, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const hideMenuTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    // Cleanup timer on component unmount
+    return () => {
+      if (hideMenuTimer.current) {
+        clearTimeout(hideMenuTimer.current);
+      }
+    };
+  }, []);
 
   const languages: { code: Language; name: string }[] = [
     { code: 'en', name: 'English' },
@@ -15,6 +25,19 @@ export const LanguageSwitcher: React.FC = () => {
     { code: 'zh', name: '简体中文' },
   ];
 
+  const handleMouseEnter = () => {
+    if (hideMenuTimer.current) {
+      clearTimeout(hideMenuTimer.current);
+    }
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    hideMenuTimer.current = window.setTimeout(() => {
+      setIsOpen(false);
+    }, 200); // Delay allows user to move cursor to menu
+  };
+
   const handleLanguageChange = (langCode: Language) => {
     setLanguage(langCode);
     setIsOpen(false);
@@ -23,8 +46,8 @@ export const LanguageSwitcher: React.FC = () => {
   return (
     <div
       className="fixed bottom-5 right-5 z-50"
-      onMouseEnter={() => setIsOpen(true)}
-      onMouseLeave={() => setIsOpen(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div
         className={`absolute bottom-full mb-2 right-0 bg-brand-card border border-gray-700 rounded-lg shadow-2xl w-36 origin-bottom-right transition-all duration-300 ease-in-out transform-gpu ${

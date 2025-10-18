@@ -13,7 +13,8 @@ import {
     ShieldExclamationIcon,
 } from './Icons';
 
-const UseCaseCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
+// FIX: Explicitly type UseCaseCard as React.FC to resolve issue with props spreading.
+const UseCaseCard: React.FC<{ icon: React.ReactNode, title: string, description: string }> = ({ icon, title, description }) => (
     <div className="bg-brand-card p-6 rounded-lg shadow-lg border border-gray-800 transition-transform transform hover:-translate-y-1 h-full">
         <div className="flex items-center justify-start gap-4">
             <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-lg bg-brand-gold/10 text-brand-gold">

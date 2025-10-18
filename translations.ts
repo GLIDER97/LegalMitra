@@ -44,6 +44,48 @@ const commonTranslations = {
         zh: '正在分析文档...',
         hi: 'दस्तावेज़ का विश्लेषण हो रहा है...',
     },
+    loader_step_1: {
+        en: "Summarizing key points in simple language...",
+        es: "Resumiendo los puntos clave en un lenguaje sencillo...",
+        ar: "تلخيص النقاط الرئيسية بلغة بسيطة...",
+        zh: "正在用简单的语言总结要点...",
+        hi: "मुख्य बिंदुओं को सरल भाषा में सारांशित किया जा रहा है...",
+    },
+    loader_step_2: {
+        en: "Conducting a full SWOT analysis...",
+        es: "Realizando un análisis FODA completo...",
+        ar: "إجراء تحليل SWOT كامل...",
+        zh: "正在进行全面的 SWOT 分析...",
+        hi: "पूर्ण SWOT विश्लेषण किया जा रहा है...",
+    },
+    loader_step_3: {
+        en: "Identifying potential red flags...",
+        es: "Identificando posibles señales de alerta...",
+        ar: "تحديد العلامات الحمراء المحتملة...",
+        zh: "正在识别潜在的危险信号...",
+        hi: "संभावित रेड फ्लैग की पहचान की जा रही है...",
+    },
+    loader_step_4: {
+        en: "Thinking about possible negotiation points...",
+        es: "Pensando en posibles puntos de negociación...",
+        ar: "التفكير في نقاط التفاوض الممكنة...",
+        zh: "正在考虑可能的谈判要点...",
+        hi: "संभावित बातचीत के बिंदुओं के बारे में सोचा जा रहा है...",
+    },
+    loader_step_5: {
+        en: "Creating a glossary of confusing jargon...",
+        es: "Creando un glosario de jerga confusa...",
+        ar: "إنشاء مسرد للمصطلحات المربكة...",
+        zh: "正在创建令人困惑的术语表...",
+        hi: "भ्रामक शब्दजाल की शब्दावली बनाई जा रही है...",
+    },
+    loader_step_jargon: {
+        en: "Simplifying Technical Words...",
+        es: "Simplificando palabras técnicas...",
+        ar: "تبسيط الكلمات التقنية...",
+        zh: "正在简化技术术语...",
+        hi: "तकनीकी शब्दों को सरल बनाया जा रहा है...",
+    },
     // Errors
     error_file_parse_title: {
         en: "File Reading Error",
@@ -86,6 +128,20 @@ const commonTranslations = {
         ar: "لم يتمكن الذكاء الاصطناعي من معالجة المستند. قد يحدث هذا أحيانًا بسبب حركة المرور العالية أو بنية المستند غير العادية. يرجى المحاولة مرة أخرى بعد لحظات.",
         zh: "AI 无法处理该文档。这有时可能是由于流量过大或文档结构异常造成的。请稍后重试。",
         hi: "AI दस्तावेज़ को संसाधित करने में असमर्थ था। यह कभी-kadang उच्च ट्रैफ़िक या एक असामान्य दस्तावेज़ संरचना के कारण हो सकता है। कृपया थोड़ी देर में पुनः प्रयास करें।",
+    },
+    error_ocr_title: {
+        en: "OCR Error",
+        es: "Error de OCR",
+        ar: "خطأ في التعرف الضوئي على الحروف",
+        zh: "OCR 错误",
+        hi: "ओसीआर त्रुटि",
+    },
+    error_ocr_message: {
+        en: "The OCR library could not be loaded to read the scanned document. Please check your internet connection and try again.",
+        es: "No se pudo cargar la biblioteca de OCR para leer el documento escaneado. Por favor, revisa tu conexión a internet e inténtalo de nuevo.",
+        ar: "تعذر تحميل مكتبة التعرف الضوئي على الحروف لقراءة المستند الممسوح ضوئيًا. يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.",
+        zh: "无法加载 OCR 库以读取扫描的文档。请检查您的网络连接并重试。",
+        hi: "स्कैन किए गए दस्तावेज़ को पढ़ने के लिए ओसीआर लाइब्रेरी लोड नहीं हो सकी। कृपया अपना इंटरनेट कनेक्शन जांचें और फिर से प्रयास करें।",
     },
     error_pdf_hindi_title: {
         en: "Hindi PDF Generation Failed",
@@ -269,15 +325,57 @@ const commonTranslations = {
         zh: '术语表',
         hi: 'शब्दावली',
     },
+    pdf_glossary_term_header: {
+        en: 'Term',
+        es: 'Término',
+        ar: 'المصطلح',
+        zh: '术语',
+        hi: 'शब्द',
+    },
+    pdf_glossary_def_header: {
+        en: 'Definition',
+        es: 'Definición',
+        ar: 'التعريف',
+        zh: '定义',
+        hi: 'परिभाषा',
+    },
+    pdf_chat_history_title: {
+        en: 'Follow-up Q&A',
+        es: 'Preguntas y Respuestas de Seguimiento',
+        ar: 'أسئلة وأجوبة المتابعة',
+        zh: '后续问答',
+        hi: 'अनुवर्ती प्रश्नोत्तर',
+    },
+    pdf_chat_user_prefix: {
+        en: 'You:',
+        es: 'Tú:',
+        ar: 'أنت:',
+        zh: '您:',
+        hi: 'आप:',
+    },
+    pdf_chat_model_prefix: {
+        en: 'LegalIQ:',
+        es: 'LegalIQ:',
+        ar: 'LegalIQ:',
+        zh: 'LegalIQ:',
+        hi: 'लीगलआईक्यू:',
+    },
 };
 
 const emotionalCopy = {
     hero_title: {
-        en: "LegalIQ.app — Your Shield Against Costly Legal Traps",
-        es: "LegalIQ.app — Su escudo contra trampas legales costosas",
-        ar: "LegalIQ.app — درعك ضد الفخاخ القانونية المكلفة",
-        zh: "LegalIQ.app — 您对抗昂贵法律陷阱的盾牌",
-        hi: "LegalIQ.app — महँगे कानूनी जालों के खिलाफ आपकी ढाल",
+        en: "FREE AI CONTRACT CHECKER",
+        es: "REVISOR DE CONTRATOS IA GRATUITO",
+        ar: "مدقق عقود مجاني بالذكاء الاصطناعي",
+        zh: "免费 AI 合同审查工具",
+        hi: "मुफ़्त एआई अनुबंध चेकर",
+    },
+    hero_subheadline_new: {
+        en: "Analyze Your Contracts & Chat for Clarity",
+        es: "Analiza Tus Contratos y Chatea para Obtener Claridad",
+        ar: "حلّل عقودك وتحدّث للحصول على الوضوح",
+        zh: "分析合同，聊天答疑",
+        hi: "स्पष्टता के लिए अपने अनुबंधों का विश्लेषण करें और चैट करें",
     },
     hero_subtitle: {
         en: "From health insurance to job or rental contracts, the fine print can hide life-changing risks. LegalIQ.app simplifies complex documents into clear insights, so you can sign with confidence.",
@@ -334,6 +432,13 @@ const emotionalCopy = {
         ar: "احمني وحلل الآن",
         zh: "保护我并立即分析",
         hi: "मेरी रक्षा करें और अभी विश्लेषण करें",
+    },
+    upload_analysis_done_button: {
+        en: "Analysis Generated Below",
+        es: "Análisis Generado a Continuación",
+        ar: "تم إنشاء التحليل أدناه",
+        zh: "分析已在下方生成",
+        hi: "विश्लेषण नीचे उत्पन्न किया गया है",
     },
     why_title: {
         en: "Your Shield Against Legal Traps & Fine Print",
@@ -784,7 +889,7 @@ const useCasesSection = {
         zh: "给学生贾马尔的一份实习录用通知中包含一项条款，规定公司在他实习期间拥有他所有个人项目的所有权。LegalIQ.app 的摘要澄清了这一过度要求，帮助他确保了自己作品的权利。",
         hi: "छात्र जमाल के लिए एक इंटर्नशिप प्रस्ताव में एक क्लॉज शामिल था जो कंपनी को अवधि के दौरान उसकी सभी व्यक्तिगत परियोजनाओं का स्वामित्व देता था। लीगलआईक्यू.ऐप के सारांश ने इस अतिरेक को स्पष्ट किया, जिससे उसे अपने काम के अधिकार सुरक्षित करने में मदद मिली।",
     },
-    use_cases_7_title: { en: "Creators & Artists", es: "Creadores y Artistas", ar: "المبدعون والفنانون", zh: "创作者与艺术家", hi: "रचनाकार और कलाकार" },
+    use_cases_7_title: { en: "Creators & Artists", es: "Creadores y Artistas", ar: "المبدعون والفنانون", zh: "创作者与艺术家", hi: "रचनाकार और艺术家" },
     use_cases_7_desc: { 
         en: "Artist Chloe was offered a licensing deal with a complex royalty structure that was far below industry standard. She used LegalIQ.app to understand the trap and successfully negotiated a fair deal, protecting her livelihood.",
         es: "A la artista Chloe le ofrecieron un acuerdo de licencia con una estructura de regalías compleja que estaba muy por debajo del estándar de la industria. Usó LegalIQ.app para entender la trampa y negoció con éxito un acuerdo justo, protegiendo su sustento.",
@@ -887,7 +992,7 @@ const faqSection = {
         es: "Muchas soluciones de software de revisión de contratos automatizados están diseñadas para profesionales del derecho. LegalIQ.app está diseñado específicamente para ti, el individuo. Priorizamos el lenguaje simple, la identificación de riesgos del mundo real y la provisión de consejos prácticos para tu protección, haciendo que la seguridad legal sea accesible para todos.",
         ar: "تم تصميم العديد من حلول برامج مراجعة العقود الآلية للمهنيين القانونيين. تم تصميم LegalIQ.app خصيصًا لك، الفرد. نحن نعطي الأولوية للغة البسيطة، وتحديد المخاطر الواقعية، وتقديم نصائح قابلة للتنفيذ لحمايتك، مما يجعل السلامة القانونية في متناول الجميع.",
         zh: "许多自动化合同审查软件解决方案是为法律专业人士构建的。LegalIQ.app 专为个人用户设计。我们优先考虑简单的语言，识别现实世界中的风险，并为您的保护提供可行的建议，让每个人都能获得法律安全。",
-        hi: "कई स्वचालित अनुबंध समीक्षा सॉफ्टवेयर समाधान कानूनी पेशेवरों के लिए बनाए गए हैं। LegalIQ.app विशेष रूप से आपके, यानी व्यक्ति के लिए डिज़ाइन किया गया है। हम सरल भाषा, वास्तविक दुनिया के जोखिमों की पहचान करने और आपकी सुरक्षा के लिए कार्रवाई योग्य सलाह प्रदान करने को प्राथमिकता देते हैं, जिससे कानूनी सुरक्षा सभी के लिए सुलभ हो जाती है।",
+        hi: "कई स्वचालित अनुबंध समीक्षा सॉफ्टवेयर समाधान कानूनी पेशेवरों के लिए बनाए गए हैं। लीगलआईक्यू.ऐप विशेष रूप से आपके, यानी व्यक्ति के लिए डिज़ाइन किया गया है। हम सरल भाषा, वास्तविक दुनिया के जोखिमों की पहचान करने और आपकी सुरक्षा के लिए कार्रवाई योग्य सलाह प्रदान करने को प्राथमिकता देते हैं, जिससे कानूनी सुरक्षा सभी के लिए सुलभ हो जाती है।",
     },
     faq_q8: { en: "Can LegalIQ.app replace a lawyer?", es: "¿Puede LegalIQ.app reemplazar a un abogado?", ar: "هل يمكن لـ LegalIQ.app أن يحل محل المحامي؟", zh: "LegalIQ.app 可以取代律师吗？", hi: "क्या LegalIQ.app एक वकील की जगह ले सकता है?" },
     faq_a8: {
@@ -1086,7 +1191,7 @@ const blogContentSection = {
         zh: "除了识别问题之外，LegalIQ.app 不仅仅是一个法律文件可读性检查工具，它还积极提出<k>谈判要点</k>。该平台会突出显示您可能需要请求修改的领域，为您提供与另一方讨论的具体谈话要点。",
         hi: "मुद्दों की पहचान करने के अलावा, लीगलआईक्यू.ऐप केवल एक कानूनी दस्तावेज़ पठनीयता परीक्षक से कहीं अधिक के रूप में कार्य करता है - यह सक्रिय रूप से <k>बातचीत के बिंदु</k> सुझाता है। प्लेटफ़ॉर्म उन क्षेत्रों पर प्रकाश डालता है जहाँ आप संशोधनों का अनुरोध कर सकते हैं, जो आपको दूसरे पक्ष के साथ चर्चा के लिए ठोस बातचीत के बिंदु प्रदान करता है।",
     },
-    blog_h2_4: { en: "Getting Started with LegalIQ.app", es: "Cómo empezar con LegalIQ.app", ar: "البدء مع LegalIQ.app", zh: "LegalIQ.app 入门", hi: "LegalIQ.app के साथ शुरुआत करना" },
+    blog_h2_4: { en: "Getting Started with LegalIQ.app", es: "Cómo empezar con LegalIQ.app", ar: "البدء مع LegalIQ.app", zh: "LegalIQ.app 入门", hi: "लीगलआईक्यू.ऐप के साथ शुरुआत करना" },
     blog_p9: { en: "Using LegalIQ.app is straightforward:", es: "Usar LegalIQ.app es sencillo:", ar: "استخدام LegalIQ.app بسيط:", zh: "使用 LegalIQ.app 很简单：", hi: "लीगलआईक्यू.ऐप का उपयोग करना सीधा है:" },
     blog_li_g1_b: { en: "Upload Your Document:", es: "Sube tu documento:", ar: "حمل مستندك:", zh: "上传您的文件：", hi: "अपना दस्तावेज़ अपलोड करें:" },
     blog_li_g1_t: {
