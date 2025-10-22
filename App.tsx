@@ -406,6 +406,7 @@ const App: React.FC = () => {
                 isOpen={isVaniMitraOpen}
                 onClose={() => setIsVaniMitraOpen(false)}
                 documentText={documentText}
+                analysisResult={analysisResult}
                 chatHistory={chatMessages}
                 setChatHistory={setChatMessages}
             />
@@ -413,6 +414,7 @@ const App: React.FC = () => {
                 isOpen={isChatOpen}
                 onClose={() => setIsChatOpen(false)}
                 documentText={documentText}
+                analysisResult={analysisResult}
                 chatHistory={chatMessages}
                 setChatHistory={setChatMessages}
             />

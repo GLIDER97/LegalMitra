@@ -217,7 +217,7 @@ export const generateSpeech = async (text: string, language: Language): Promise<
 };
 
 // --- Function for Chat ---
-export const getChatResponse = async (documentText: string, history: Message[], newMessage: string, language: Language): Promise<string> => {
+export const getChatResponse = async (documentText: string, analysisResult: AnalysisResult | null, history: Message[], newMessage: string, language: Language): Promise<string> => {
     try {
         const targetLanguage = languageMap[language] || 'English';
         const formattedHistory = history.map(msg => ({
@@ -228,22 +228,28 @@ export const getChatResponse = async (documentText: string, history: Message[], 
         // Remove the latest user message from history as it will be the new prompt
         const chatHistoryForApi = formattedHistory.slice(0, -1);
 
+        const analysisContext = analysisResult && Object.keys(analysisResult).length > 0
+            ? `ANALYSIS REPORT:\n---\n${JSON.stringify(analysisResult, null, 2)}\n---`
+            : '';
+
         const chat: Chat = ai.chats.create({
             model: 'gemini-2.5-flash',
             history: chatHistoryForApi,
             config: {
-                systemInstruction: `You are a helpful AI assistant named LegalIQ.app. The user has provided a legal document and is asking questions about it.
+                systemInstruction: `You are a helpful AI assistant named LegalIQ.app. The user has provided a legal document and you have already performed an analysis on it. The user is now asking follow-up questions.
                 - **Your most important rule is to match the user's language.** Detect the language of the user's latest query and respond in the EXACT same language and style.
                 - Keep answers short, concise, and very easy to understand for a non-expert.
-                - Base your answers STRICTLY on the content of the document provided.
-                - If the answer cannot be found in the document, state that clearly in the user's language.
+                - Base your answers STRICTLY on the content of the document AND the analysis provided.
+                - If the answer cannot be found in the document or analysis, state that clearly in the user's language.
                 - Do NOT provide legal advice. Start your response by directly answering the user's question.
                 - The user's target language is ${targetLanguage}.
                 
                 DOCUMENT:
                 ---
                 ${documentText}
-                ---`,
+                ---
+                
+                ${analysisContext}`,
                 temperature: 0.3,
             },
         });

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, LiveSession, LiveServerMessage, Modality, Blob } from '@google/genai';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
-import type { Message } from '../types';
+import type { Message, AnalysisResult } from '../types';
 import { XMarkIcon, SparklesIcon, UserIcon, MicrophoneIcon } from './Icons';
 
 // --- Audio Encoding/Decoding utilities as per Gemini Live API documentation ---
@@ -62,6 +62,7 @@ interface VaniMitraProps {
     isOpen: boolean;
     onClose: () => void;
     documentText: string;
+    analysisResult: AnalysisResult | null;
     chatHistory: Message[];
     setChatHistory: React.Dispatch<React.SetStateAction<Message[]>>;
 }
@@ -70,13 +71,14 @@ type Status = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error';
 
 const ANALYSER_FFT_SIZE = 64; // Gives 32 data points
 
-export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentText, chatHistory, setChatHistory }) => {
+export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentText, analysisResult, chatHistory, setChatHistory }) => {
     const { t } = useTranslations();
     const { language } = useLanguage();
 
     const [status, setStatus] = useState<Status>('idle');
     const [error, setError] = useState<string | null>(null);
     const [analyserData, setAnalyserData] = useState(() => new Uint8Array(ANALYSER_FFT_SIZE / 2));
+    const [liveInput, setLiveInput] = useState('');
 
     const sessionPromiseRef = useRef<Promise<LiveSession> | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
@@ -90,12 +92,14 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
 
     const outputSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
     const nextStartTimeRef = useRef<number>(0);
+    const currentInputRef = useRef('');
+    const currentOutputRef = useRef('');
     
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [chatHistory]);
+    }, [chatHistory, liveInput]);
 
     const disconnect = useCallback(() => {
         if (animationFrameRef.current) {
@@ -116,8 +120,8 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
         inputAnalyserRef.current = null;
         outputAnalyserRef.current = null;
 
-        inputAudioContextRef.current?.close();
-        outputAudioContextRef.current?.close();
+        inputAudioContextRef.current?.close().catch(console.error);
+        outputAudioContextRef.current?.close().catch(console.error);
         inputAudioContextRef.current = null;
         outputAudioContextRef.current = null;
         
@@ -142,7 +146,7 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
             streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
         } catch (err: any) {
             console.error("Microphone access error:", err.name, err.message);
-            if (err.name === 'NotAllowedError') setError(t('vani_mitra_mic_error_denied'));
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') setError(t('vani_mitra_mic_error_denied'));
             else if (err.name === 'NotFoundError') setError(t('vani_mitra_mic_error_not_found'));
             else setError(t('vani_mitra_mic_error_generic'));
             setStatus('error');
@@ -151,7 +155,27 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
 
         setStatus('listening');
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const systemInstruction = `You are a helpful AI assistant named LegalIQ.app...`;
+        const languageMap: Record<string, string> = { en: 'English', hi: 'Hindi' };
+        
+        const analysisContext = analysisResult && Object.keys(analysisResult).length > 0 
+            ? `ANALYSIS REPORT:\n---\n${JSON.stringify(analysisResult, null, 2)}\n---` 
+            : '';
+
+        const systemInstruction = `You are Vani Mitra, a helpful and friendly voice AI assistant for LegalIQ.app. The user has provided a legal document and you have already performed an analysis on it. The user is now asking follow-up questions via voice.
+- Your most important rule is to match the user's language. The user's primary language is ${languageMap[language] || 'English'}. Respond in that language.
+- CRITICAL: Wait for the user to finish their thought or sentence completely before you start responding. Do not interrupt them, even if there is a short pause.
+- Keep your spoken answers short, conversational, and very easy to understand for a non-expert.
+- Base your answers STRICTLY on the content of the document AND the analysis provided below.
+- If the answer cannot be found in the provided context, state that clearly and politely.
+- Do NOT provide legal advice. Start your response by directly answering the user's question.
+- Be friendly and use a reassuring tone.
+
+DOCUMENT:
+---
+${documentText}
+---
+
+${analysisContext}`;
 
         sessionPromiseRef.current = ai.live.connect({
             model: 'gemini-2.5-flash-native-audio-preview-09-2025',
@@ -159,6 +183,7 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
                 systemInstruction,
                 responseModalities: [Modality.AUDIO],
                 inputAudioTranscription: {},
+                outputAudioTranscription: {},
             },
             callbacks: {
                 onopen: () => {
@@ -179,7 +204,16 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
                     scriptProcessorRef.current.connect(ctx.destination);
                 },
                 onmessage: async (message: LiveServerMessage) => {
-                    if (message.serverContent?.inputTranscription?.text) setStatus('thinking');
+                    if (message.serverContent?.inputTranscription) {
+                        setStatus('thinking');
+                        const text = message.serverContent.inputTranscription.text;
+                        currentInputRef.current += text;
+                        setLiveInput(currentInputRef.current);
+                    }
+                    if (message.serverContent?.outputTranscription) {
+                        const text = message.serverContent.outputTranscription.text;
+                        currentOutputRef.current += text;
+                    }
 
                     const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
                     if (base64Audio) {
@@ -209,9 +243,38 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
                             }
                         });
                         source.start(nextStartTimeRef.current);
-                        // FIX: Using simple assignment instead of compound assignment to prevent potential TypeScript type errors with refs.
                         nextStartTimeRef.current = nextStartTimeRef.current + audioBuffer.duration;
                         outputSourcesRef.current.add(source);
+                    }
+
+                    const interrupted = message.serverContent?.interrupted;
+                    if (interrupted) {
+                        outputSourcesRef.current.forEach(source => {
+                            source.stop();
+                            outputSourcesRef.current.delete(source);
+                        });
+                        nextStartTimeRef.current = 0;
+                        currentOutputRef.current = '';
+                    }
+
+                    if (message.serverContent?.turnComplete) {
+                        const finalInput = currentInputRef.current.trim();
+                        const finalOutput = currentOutputRef.current.trim();
+                        
+                        setChatHistory(prev => {
+                            const newHistory = [...prev];
+                            if (finalInput) newHistory.push({ role: 'user', text: finalInput });
+                            if (finalOutput) newHistory.push({ role: 'model', text: finalOutput });
+                            return newHistory;
+                        });
+                        
+                        currentInputRef.current = '';
+                        currentOutputRef.current = '';
+                        setLiveInput('');
+                        
+                        if (outputSourcesRef.current.size === 0) {
+                            setStatus('listening');
+                        }
                     }
                 },
                 onerror: (e: ErrorEvent) => {
@@ -224,7 +287,7 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
             },
         });
 
-    }, [documentText, t, disconnect]);
+    }, [documentText, analysisResult, language, t, disconnect, setChatHistory]);
     
     useEffect(() => {
         let active = true;
@@ -253,12 +316,18 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
 
     useEffect(() => {
         if (isOpen) {
+            // Reset state for new session
+            setChatHistory([]);
+            setLiveInput('');
+            currentInputRef.current = '';
+            currentOutputRef.current = '';
             connect();
         } else {
             disconnect();
         }
         return () => disconnect();
-    }, [isOpen, connect, disconnect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen]);
 
     const statusInfo: Record<Status, { text: string; pulsate: boolean }> = {
         idle: { text: t('vani_mitra_thinking'), pulsate: true },
@@ -282,20 +351,40 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
                     </button>
                 </header>
                 
-                <main className="flex-1 flex flex-col justify-between overflow-y-auto p-4 space-y-4">
-                    <div className="flex-1 space-y-4">
+                <main className="flex-1 flex flex-col justify-between overflow-hidden p-4 space-y-4">
+                    <div className="flex-1 space-y-4 overflow-y-auto no-scrollbar pr-2">
                         <div className="p-4 bg-brand-dark/50 rounded-lg text-center">
                             <p className="text-base text-gray-300">{t('vani_mitra_welcome')}</p>
                         </div>
-                        {/* Chat history rendering... */}
+                        {chatHistory.map((msg, index) => (
+                             <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                                {msg.role === 'model' && (
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center"><SparklesIcon className="w-5 h-5 text-brand-gold" /></div>
+                                )}
+                                <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'user' ? 'bg-brand-gold text-brand-dark rounded-br-none' : 'bg-gray-700 text-brand-light rounded-bl-none'}`}>
+                                    <p className="text-base whitespace-pre-wrap">{msg.text}</p>
+                                </div>
+                                {msg.role === 'user' && (
+                                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center"><UserIcon className="w-5 h-5 text-gray-400" /></div>
+                                )}
+                            </div>
+                        ))}
+                         {liveInput && (
+                            <div className="flex items-start gap-3 justify-end animate-fade-in">
+                                <div className="max-w-[80%] rounded-2xl px-4 py-2 bg-brand-gold/50 text-brand-light italic rounded-br-none">
+                                    <p className="text-base whitespace-pre-wrap">{liveInput}</p>
+                                </div>
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center"><UserIcon className="w-5 h-5 text-gray-400" /></div>
+                            </div>
+                        )}
                         <div ref={messagesEndRef} />
                     </div>
                     <div className="flex-shrink-0 flex flex-col items-center justify-center text-center p-6 space-y-4">
                         <div className={`relative flex items-center justify-center w-28 h-28 rounded-full transition-colors ${status === 'error' ? 'bg-red-500/20' : 'bg-brand-gold/10'}`}>
                             
-                            {/* Audio Visualizer */}
                             <div className="absolute inset-0 flex items-center justify-center">
-                                {Array.from(analyserData).map((value, i) => {
+                                {Array.from({ length: analyserData.length }).map((_, i) => {
+                                    const value = analyserData[i] || 0;
                                     const barHeight = Math.max(2, (value / 255) * 110);
                                     const angle = (i / (analyserData.length || 1)) * 360;
                                     return (

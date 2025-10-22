@@ -64,39 +64,6 @@ export const BlogContent: React.FC = () => {
                 <p className="leading-8 mt-4">{t('blog_p5')}</p>
 
                 <CtaButton />
-
-                <h2 className="text-2xl sm:text-3xl font-bold mt-16 mb-6 text-brand-light">{t('blog_h2_3')}</h2>
-
-                <h3 className="text-xl sm:text-2xl font-semibold mt-12 mb-4 text-brand-gold">{t('blog_h3_1')}</h3>
-                <ParagraphWithKeywords translationKey="blog_p6" />
-                <ul className="list-disc pl-8 mt-4 space-y-2">
-                    <li><strong className="font-semibold text-gray-100">{t('blog_li_s1_b')}</strong> {t('blog_li_s1_t')}</li>
-                    <li><strong className="font-semibold text-gray-100">{t('blog_li_s2_b')}</strong> {t('blog_li_s2_t')}</li>
-                    <li><strong className="font-semibold text-gray-100">{t('blog_li_s3_b')}</strong> {t('blog_li_s3_t')}</li>
-                    <li><strong className="font-semibold text-gray-100">{t('blog_li_s4_b')}</strong> {t('blog_li_s4_t')}</li>
-                </ul>
-
-                <h3 className="text-xl sm:text-2xl font-semibold mt-12 mb-4 text-brand-gold">{t('blog_h3_2')}</h3>
-                <ParagraphWithKeywords translationKey="blog_p7" />
-
-                <h3 className="text-xl sm:text-2xl font-semibold mt-12 mb-4 text-brand-gold">{t('blog_h3_3')}</h3>
-                <ParagraphWithKeywords translationKey="blog_p8" />
-                
-                <h2 className="text-2xl sm:text-3xl font-bold mt-16 mb-6 text-brand-light">{t('blog_h2_4')}</h2>
-                <p className="leading-8">{t('blog_p9')}</p>
-                <ol className="list-decimal pl-8 mt-4 space-y-2">
-                    <li><strong className="font-semibold text-gray-100">{t('blog_li_g1_b')}</strong>{t('blog_li_g1_t')}</li>
-                    <li><strong className="font-semibold text-gray-100">{t('blog_li_g2_b')}</strong>{t('blog_li_g2_t')}</li>
-                    <li><strong className="font-semibold text-gray-100">{t('blog_li_g3_b')}</strong>{t('blog_li_g3_t')}</li>
-                </ol>
-
-                <h2 className="text-2xl sm:text-3xl font-bold mt-16 mb-6 text-brand-light">{t('blog_h2_5')}</h2>
-                <p className="leading-8">{t('blog_p10')}</p>
-                <div className="mt-4">
-                    <ParagraphWithKeywords translationKey="blog_p11" />
-                </div>
-
-                <CtaButton />
             </article>
         </div>
     );

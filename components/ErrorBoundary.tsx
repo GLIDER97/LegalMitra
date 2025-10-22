@@ -10,7 +10,6 @@ interface State {
 }
 
 class ErrorBoundary extends Component<Props, State> {
-  // FIX: Removed explicit type annotation for state to rely on TypeScript's type inference, which can resolve issues with strict linting configurations.
   state = { hasError: false };
 
   static getDerivedStateFromError(_: Error): State {
@@ -45,6 +44,7 @@ class ErrorBoundary extends Component<Props, State> {
       );
     }
 
+    // FIX: In a class component, props must be accessed via `this.props`.
     return this.props.children;
   }
 }

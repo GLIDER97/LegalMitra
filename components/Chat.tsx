@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
-import type { Message } from '../types';
+import type { Message, AnalysisResult } from '../types';
 import { getChatResponse } from '../services/geminiService';
 import { XMarkIcon, SparklesIcon, UserIcon, PaperAirplaneIcon, SpinnerIcon } from './Icons';
 
@@ -8,11 +8,12 @@ interface ChatProps {
     isOpen: boolean;
     onClose: () => void;
     documentText: string;
+    analysisResult: AnalysisResult | null;
     chatHistory: Message[];
     setChatHistory: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
-export const Chat: React.FC<ChatProps> = ({ isOpen, onClose, documentText, chatHistory, setChatHistory }) => {
+export const Chat: React.FC<ChatProps> = ({ isOpen, onClose, documentText, analysisResult, chatHistory, setChatHistory }) => {
     const { t } = useTranslations();
     const { language } = useLanguage();
     const [userInput, setUserInput] = useState('');
@@ -41,7 +42,7 @@ export const Chat: React.FC<ChatProps> = ({ isOpen, onClose, documentText, chatH
         setIsThinking(true);
 
         try {
-            const modelResponse = await getChatResponse(documentText, newHistory, trimmedInput, language);
+            const modelResponse = await getChatResponse(documentText, analysisResult, newHistory, trimmedInput, language);
             setChatHistory(prev => [...prev, { role: 'model', text: modelResponse }]);
         } catch (error) {
             console.error("Chat error:", error);
