@@ -1,7 +1,9 @@
 import React from 'react';
 import { jsPDF } from 'jspdf';
 import type { AnalysisResult, JargonTerm, SectionError, Message } from '../types';
+// FIX: Import `TranslationKeys` which is now properly exported.
 import type { TranslationKeys } from '../translations';
+import { generateSpeech } from '../services/geminiService';
 import { 
     DownloadIcon, 
     AlertTriangleIcon, 
@@ -11,7 +13,10 @@ import {
     ScaleIcon,
     ThumbsUpIcon,
     ThumbsDownIcon,
-    LightbulbIcon
+    LightbulbIcon,
+    SpeakerWaveIcon,
+    StopCircleIcon,
+    SpinnerIcon
 } from './Icons';
 import { useTranslations, useLanguage } from '../hooks/useTranslations';
 import { NotoSansDevanagariRegular } from './NotoSansDevanagariFont';
@@ -90,14 +95,41 @@ const JargonExplainer: React.FC<{ text: string; glossary?: JargonTerm[] }> = ({ 
   );
 };
 
+const ReadAloudButton: React.FC<{
+    isPlaying: boolean;
+    isLoading: boolean;
+    onClick: () => void;
+}> = ({ isPlaying, isLoading, onClick }) => {
+    const Icon = isPlaying ? StopCircleIcon : SpeakerWaveIcon;
+    return (
+        <button
+            onClick={onClick}
+            disabled={isLoading}
+            className="p-2 rounded-full text-brand-gold hover:bg-brand-gold/20 disabled:text-gray-500 disabled:cursor-wait transition-colors focus:outline-none focus:ring-2 focus:ring-brand-gold"
+            aria-label={isPlaying ? "Stop reading" : "Read section aloud"}
+        >
+            {isLoading ? (
+                <SpinnerIcon className="h-5 w-5 animate-spin" />
+            ) : (
+                <Icon className="h-5 w-5" />
+            )}
+        </button>
+    );
+};
 
-const Section: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode; isLoading?: boolean, error?: SectionError | null; onRetry?: () => void; }> = ({ icon, title, children, isLoading, error, onRetry }) => (
+
+const Section: React.FC<{ icon: React.ReactNode; title: string; children: React.ReactNode; isLoading?: boolean, error?: SectionError | null; onRetry?: () => void; onPlay?: () => void; isPlaying?: boolean; isPlayLoading?: boolean }> = ({ icon, title, children, isLoading, error, onRetry, onPlay, isPlaying, isPlayLoading }) => (
     <div className="bg-brand-card/50 p-6 rounded-lg shadow-lg border border-gray-800">
         <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-lg bg-brand-gold/10 text-brand-gold">
                 {icon}
             </div>
             <h3 className="ml-4 text-xl font-bold text-brand-light">{title}</h3>
+            {onPlay && (
+                <div className="ml-auto">
+                    <ReadAloudButton isPlaying={!!isPlaying} isLoading={!!isPlayLoading} onClick={onPlay} />
+                </div>
+            )}
         </div>
         <div className="mt-4 md:pl-14 text-gray-300 space-y-4">
             {isLoading && <div className="space-y-3"><SkeletonLoader /><SkeletonLoader className="h-4 bg-gray-700 rounded w-1/2" /></div>}
@@ -137,318 +169,264 @@ const SwotCard: React.FC<{ title: string; items: string[] | undefined; color: st
     );
 };
 
+// Audio decoding utilities
+function decode(base64: string): Uint8Array {
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+}
+
+async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
+    const dataInt16 = new Int16Array(data.buffer);
+    const frameCount = dataInt16.length / numChannels;
+    const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+    for (let channel = 0; channel < numChannels; channel++) {
+        const channelData = buffer.getChannelData(channel);
+        for (let i = 0; i < frameCount; i++) {
+            channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+        }
+    }
+    return buffer;
+}
+
 
 export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName, setError, isLoading, isGlossaryLoading, loadingMessageKey, sectionErrors, onRetry, chatMessages }) => {
     const { t } = useTranslations();
     const { language } = useLanguage();
     const { documentTitle, swot, redFlags, complexityScore, summary, negotiationPoints, jargonGlossary } = result;
+    
+    const audioContextRef = React.useRef<AudioContext | null>(null);
+    const audioSourceRef = React.useRef<AudioBufferSourceNode | null>(null);
+    const [playingSection, setPlayingSection] = React.useState<{ id: string, isLoading: boolean }>({ id: '', isLoading: false });
+
+    React.useEffect(() => {
+        return () => {
+            audioSourceRef.current?.stop();
+            audioContextRef.current?.close();
+        };
+    }, []);
+
+    const handleStopAudio = React.useCallback(() => {
+        if (audioSourceRef.current) {
+            audioSourceRef.current.stop();
+            audioSourceRef.current.disconnect();
+            audioSourceRef.current = null;
+        }
+        setPlayingSection({ id: '', isLoading: false });
+    }, []);
+
+    const handlePlayAudio = React.useCallback(async (sectionId: string, textToRead: string) => {
+        if (playingSection.id === sectionId) {
+            handleStopAudio();
+            return;
+        }
+
+        handleStopAudio();
+        
+        if (!textToRead.trim()) return;
+
+        setPlayingSection({ id: sectionId, isLoading: true });
+
+        try {
+            const base64Audio = await generateSpeech(textToRead, language);
+
+            if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+                audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            }
+            const ctx = audioContextRef.current;
+            const audioBuffer = await decodeAudioData(decode(base64Audio), ctx, 24000, 1);
+            
+            const source = ctx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(ctx.destination);
+            source.start();
+
+            audioSourceRef.current = source;
+            setPlayingSection({ id: sectionId, isLoading: false });
+            
+            source.onended = () => {
+                if (audioSourceRef.current === source) {
+                    handleStopAudio();
+                }
+            };
+        } catch (e: any) {
+            console.error("Error playing audio:", e);
+            setError({ title: "Audio Error", message: "Could not play audio. " + e.message });
+            setPlayingSection({ id: '', isLoading: false });
+        }
+
+    }, [language, playingSection.id, handleStopAudio, setError]);
+
 
     const findError = (section: keyof AnalysisResult) => sectionErrors.find(e => e.section === section) || null;
 
     const handleDownloadPdf = () => {
-        // PDF generation requires all data to be present.
-        if (isLoading || sectionErrors.length > 0 || !summary || !swot || !redFlags || !negotiationPoints) {
-            setError({
-                title: "Report Not Ready",
-                message: "Please wait for the full analysis to complete or resolve any errors before downloading the PDF."
-            });
-            return;
+      try {
+        const doc = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4',
+        });
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 15;
+        const contentWidth = pageWidth - margin * 2;
+        let y = margin;
+        let pageNum = 1;
+
+        const isHindi = language === 'hi';
+
+        if (isHindi) {
+            doc.addFileToVFS('NotoSansDevanagari-Regular.ttf', NotoSansDevanagariRegular);
+            doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
+            doc.setFont('NotoSansDevanagari');
+        } else {
+            doc.setFont('helvetica');
+        }
+        
+        const addPageIfNeeded = (spaceNeeded: number) => {
+            if (y + spaceNeeded > pageHeight - margin) {
+                addFooter();
+                doc.addPage();
+                pageNum++;
+                y = margin;
+                addHeader();
+            }
+        };
+
+        const addHeader = () => {
+            doc.setFontSize(10);
+            doc.setTextColor(150);
+            doc.text(t('pdf_analysis_by'), pageWidth / 2, 10, { align: 'center' });
+        };
+        
+        const addFooter = () => {
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            const pageStr = `${t('pdf_page')} ${pageNum} ${t('pdf_of')}`;
+            const totalPages = doc.getNumberOfPages(); // This will be incorrect until all pages are added
+            doc.text(pageStr, pageWidth / 2, pageHeight - 10, { align: 'center' });
+            doc.text(`${t('pdf_footer_disclaimer_title')}: ${t('pdf_footer_disclaimer')}`, margin, pageHeight - 10);
+        };
+        
+        const addText = (text: string, size: number, style: 'normal' | 'bold' = 'normal', spaceAfter = 5, color = '#000000') => {
+            const lines = doc.splitTextToSize(text, contentWidth);
+            addPageIfNeeded(lines.length * (size / 2.5) + spaceAfter);
+            doc.setFontSize(size);
+            doc.setFont('helvetica', style);
+            if (isHindi) doc.setFont('NotoSansDevanagari', 'normal'); // Bold not supported by this font file
+            doc.setTextColor(color);
+            doc.text(lines, margin, y);
+            y += (lines.length * (size / 2.5)) + spaceAfter;
+        };
+
+        addHeader();
+
+        // ---- PDF CONTENT ----
+        
+        // Main Title
+        addText(t('report_title'), 22, 'bold', 4, '#D4AF37');
+        addText(`${t('pdf_for_document')} "${documentTitle || fileName}"`, 12, 'normal', 4, '#333333');
+        addText(`${t('pdf_generated_on')} ${new Date().toLocaleDateString()}`, 10, 'normal', 10, '#888888');
+
+        // Summary
+        if (summary) {
+            addText(t('report_summary_title'), 16, 'bold', 6);
+            addText(summary, 10, 'normal', 10);
         }
 
-        try {
-            setError(null);
-            const appUrl = 'https://legaliq.app/';
-            const doc = new jsPDF({
-                orientation: 'p',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            const effectiveFileName = fileName || 'Document';
-            const baseFileName = effectiveFileName.includes('.')
-                ? effectiveFileName.split('.').slice(0, -1).join('.')
-                : effectiveFileName;
-            
-            const downloadBaseFileName = baseFileName.length > 15
-                ? baseFileName.substring(0, 15)
-                : baseFileName;
-            
-            const pdfDownloadName = `${downloadBaseFileName}_Analysis by LegalIQ.app.pdf`;
-            
-            const FONT_SIZE = 11;
-            const MARGIN = 15;
-            const MAX_WIDTH = doc.internal.pageSize.getWidth() - MARGIN * 2;
-            let y = MARGIN;
-
-            const isHindi = language === 'hi';
-            const fontName = isHindi ? 'NotoSansDevanagari' : 'Helvetica';
-            
-            if (isHindi) {
-                doc.addFileToVFS('NotoSansDevanagari-Regular.ttf', NotoSansDevanagariRegular);
-                doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
-            }
-            
-            doc.setFont(fontName);
-            
-            const headingColors = [
-                [40, 40, 40], [0, 51, 102], [0, 100, 0], [139, 69, 19], [85, 26, 139]
-            ];
-            let colorIndex = 0;
-
-            const setBold = (isBold: boolean) => {
-                doc.setFont(fontName, isBold && !isHindi ? 'bold' : 'normal');
-            };
-
-            const addText = (text: string | string[], options: any = {}, spacing: number = 7, underlineJargon: boolean = true) => {
-                const textAsString = Array.isArray(text) ? text.join('\n') : text;
-                if (!textAsString.trim()) {
-                    y += spacing; return;
-                }
-                const lines = doc.splitTextToSize(textAsString, MAX_WIDTH);
-                const fontSizeInMM = FONT_SIZE / doc.internal.scaleFactor;
-                const lineHeightMultiplier = isHindi ? 1.7 : 1.5;
-                const lineHeight = fontSizeInMM * lineHeightMultiplier;
-                const getJargonRegex = (() => {
-                    let regex: RegExp | null = null;
-                    return () => {
-                        if (regex) return regex;
-                        if (!jargonGlossary || jargonGlossary.length === 0) return null;
-                        const terms = jargonGlossary.map(item => item.term.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')).filter(Boolean);
-                        if (terms.length > 0) regex = new RegExp(`\\b(${terms.join('|')})\\b`, 'gi');
-                        return regex;
-                    };
-                })();
-                const jargonRegex = getJargonRegex();
-                for (const line of lines) {
-                    if (y + lineHeight > doc.internal.pageSize.getHeight() - MARGIN) {
-                        doc.addPage(); y = MARGIN;
-                    }
-                    if (jargonRegex && underlineJargon) {
-                        const parts = line.split(jargonRegex);
-                        let currentX = MARGIN;
-                        parts.forEach((part, index) => {
-                            if (!part) return;
-                            const isJargon = index % 2 === 1;
-                            doc.text(part, currentX, y, options);
-                            const partWidth = doc.getTextWidth(part);
-                            if (isJargon) {
-                                doc.setDrawColor(80, 80, 80); doc.setLineWidth(0.2);
-                                doc.line(currentX, y + 1.2, currentX + partWidth, y + 1.2);
-                            }
-                            currentX += partWidth;
-                        });
-                    } else {
-                        doc.text(line, MARGIN, y, options);
-                    }
-                    y += lineHeight;
-                }
-                if (spacing > 0) y += spacing;
-            };
-
-            const addTitle = (text: string) => {
-                if (y > doc.internal.pageSize.getHeight() - MARGIN - 10) { doc.addPage(); y = MARGIN; }
-                doc.setFontSize(16);
-                const currentColor = headingColors[colorIndex % headingColors.length];
-                doc.setTextColor(currentColor[0], currentColor[1], currentColor[2]);
-                colorIndex++;
-                addText(text, {}, 4);
-                doc.setFontSize(FONT_SIZE);
-                doc.setTextColor(80, 80, 80);
-            };
-            
-            const addListItem = (item: string) => addText(`• ${item}`, {}, 3);
-            
-            const addFlagOrPoint = (item: { flag?: string, point?: string, explanation: string, citation?: string, example?: string }) => {
-                const title = item.flag || item.point || '';
-                if (y + 30 > doc.internal.pageSize.getHeight() - MARGIN) { doc.addPage(); y = MARGIN; }
-                setBold(true); addText(title, {}, 2); setBold(false);
-                addText(item.explanation, {}, 2);
-                if (item.example) {
-                    if (isHindi) {
-                        addText(`${t('report_example_prefix')} ${item.example}`, {}, item.citation ? 2 : 8);
-                    } else {
-                        doc.setFont(fontName, 'italic');
-                        addText(`${t('report_example_prefix')} ${item.example}`, {}, item.citation ? 2 : 8);
-                        doc.setFont(fontName, 'normal');
-                    }
-                } else {
-                     y += item.citation ? 0 : 6;
-                }
-                if (item.citation) {
-                    doc.setFontSize(FONT_SIZE - 2); doc.setTextColor(128, 128, 128);
-                    addText(`Source: ${item.citation}`, {}, 8);
-                    doc.setFontSize(FONT_SIZE); doc.setTextColor(80, 80, 80);
-                }
-            };
-            
-            // --- PDF Header ---
-            const pdfMainTitle = t('report_title');
-            const pdfDocumentName = documentTitle || baseFileName;
-            doc.setFontSize(22); doc.setTextColor('#121212');
-            const splitTitle = doc.splitTextToSize(pdfMainTitle, MAX_WIDTH);
-            doc.text(splitTitle, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
-            y += (splitTitle.length * 8) + 2;
-            doc.setFontSize(12); doc.setTextColor('#555555');
-            const truncatedDocName = pdfDocumentName.length > 80 ? pdfDocumentName.substring(0, 77) + '...' : pdfDocumentName;
-            const splitDocName = doc.splitTextToSize(truncatedDocName, MAX_WIDTH);
-            doc.text(splitDocName, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
-            y += (splitDocName.length * 5) + 4;
-            
-            doc.setFontSize(14);
-            const analysisByText = t('pdf_analysis_by');
-            const linkText = 'LegalIQ.app';
-            const prefixText = analysisByText.replace(linkText, '');
-            const prefixWidth = doc.getTextWidth(prefixText);
-            const totalWidth = doc.getTextWidth(analysisByText);
-            const startX = (doc.internal.pageSize.getWidth() - totalWidth) / 2;
-            doc.setTextColor('#444444');
-            doc.text(prefixText, startX, y);
-            doc.setTextColor(0, 0, 255); // Blue color for link
-            doc.textWithLink(linkText, startX + prefixWidth, y, { url: appUrl });
-            y += 8;
-            
-            doc.setFontSize(10); doc.setTextColor('#666666');
-            doc.text(`${t('pdf_generated_on')}: ${new Date().toLocaleDateString()}`, doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+        // Complexity
+        if (complexityScore !== undefined) {
+             addText(t('report_complexity_title'), 16, 'bold', 6);
+             const { text: complexityText } = getComplexityInfo(complexityScore);
+             addText(`${complexityScore}/10 - ${complexityText}`, 12, 'bold', 10);
+        }
+        
+        // SWOT
+        if(swot) {
+            addText(t('report_swot_title'), 16, 'bold', 6);
+            addText(t('swot_strengths'), 12, 'bold', 4, '#22c55e');
+            swot.strengths.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
+            y += 5;
+            addText(t('swot_weaknesses'), 12, 'bold', 4, '#facc15');
+            swot.weaknesses.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
+            y += 5;
+            addText(t('swot_opportunities'), 12, 'bold', 4, '#3b82f6');
+            swot.opportunities.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
+            y += 5;
+            addText(t('swot_threats'), 12, 'bold', 4, '#ef4444');
+            swot.threats.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
             y += 10;
-            doc.setDrawColor(212, 175, 55); doc.setLineWidth(0.5);
-            doc.line(MARGIN, y, doc.internal.pageSize.getWidth() - MARGIN, y);
-            y += 10;
-            doc.setFontSize(FONT_SIZE); doc.setTextColor('#121212');
+        }
 
-            // --- PDF Body ---
-            addTitle(t('pdf_summary_title'));
-            addText(summary);
-
-            addTitle(`${t('report_complexity_title')}: ${complexityScore}/10`);
-
-            addTitle(t('report_swot_title'));
-            setBold(true); addText(t('swot_strengths'), {}, 2); setBold(false);
-            swot.strengths.forEach(addListItem); y += 4;
-            setBold(true); addText(t('swot_weaknesses'), {}, 2); setBold(false);
-            swot.weaknesses.forEach(addListItem); y += 4;
-            setBold(true); addText(t('swot_opportunities'), {}, 2); setBold(false);
-            swot.opportunities.forEach(addListItem); y += 4;
-            setBold(true); addText(t('swot_threats'), {}, 2); setBold(false);
-            swot.threats.forEach(addListItem); y += 4;
-
-            addTitle(t('report_redflags_title'));
-            if (redFlags.length > 0) redFlags.forEach(item => addFlagOrPoint(item));
-            else addText(t('report_none_identified'));
-            
-            addTitle(t('report_negotiate_title'));
-            if (negotiationPoints.length > 0) negotiationPoints.forEach(item => addFlagOrPoint(item));
-            else addText(t('report_none_identified_negotiate'));
-
-            // --- PDF Chat History ---
-            if (chatMessages && chatMessages.length > 0) {
-                addTitle(t('pdf_chat_history_title'));
-                chatMessages.forEach(msg => {
-                    if (y + 10 > doc.internal.pageSize.getHeight() - MARGIN) {
-                        doc.addPage();
-                        y = MARGIN;
-                    }
-                    if (msg.role === 'user') {
-                        setBold(true);
-                        addText(`${t('pdf_chat_user_prefix')} ${msg.text}`, {}, 2, false);
-                        setBold(false);
-                    } else { // model
-                        addText(`${t('pdf_chat_model_prefix')} ${msg.text}`, {}, 8, true);
-                    }
-                });
-            }
-            
-            // --- PDF Glossary Table ---
-            if (jargonGlossary && jargonGlossary.length > 0) {
-                addTitle(t('pdf_glossary_title'));
-
-                const termColWidth = MAX_WIDTH * 0.3;
-                const defColWidth = MAX_WIDTH * 0.7;
-                
-                const termColX = MARGIN;
-                const defColX = MARGIN + termColWidth;
-
-                const fontSizeInMM = FONT_SIZE / doc.internal.scaleFactor;
-                const lineHeightMultiplier = isHindi ? 1.7 : 1.5;
-                const lineHeight = fontSizeInMM * lineHeightMultiplier;
-
-                // Add table headers
-                setBold(true);
-                doc.text(t('pdf_glossary_term_header'), termColX, y);
-                doc.text(t('pdf_glossary_def_header'), defColX, y);
-                y += lineHeight;
-                setBold(false);
-                doc.setDrawColor(180, 180, 180);
-                doc.setLineWidth(0.2);
-                doc.line(MARGIN, y, MARGIN + MAX_WIDTH, y);
-                y += lineHeight * 0.5;
-
-                jargonGlossary.forEach((item, index) => {
-                    const termLines = doc.splitTextToSize(item.term, termColWidth - 2);
-                    const defLines = doc.splitTextToSize(item.definition, defColWidth - 2);
-                    const rowLineCount = Math.max(termLines.length, defLines.length);
-                    const rowHeight = rowLineCount * lineHeight;
-
-                    if (y + rowHeight > doc.internal.pageSize.getHeight() - MARGIN) {
-                        doc.addPage();
-                        y = MARGIN;
-                        // Redraw headers on new page
-                        setBold(true);
-                        doc.text(t('pdf_glossary_term_header'), termColX, y);
-                        doc.text(t('pdf_glossary_def_header'), defColX, y);
-                        y += lineHeight;
-                        setBold(false);
-                        doc.setDrawColor(180, 180, 180);
-                        doc.setLineWidth(0.2);
-                        doc.line(MARGIN, y, MARGIN + MAX_WIDTH, y);
-                        y += lineHeight * 0.5;
-                    }
-                    
-                    setBold(true);
-                    doc.text(termLines, termColX, y);
-                    setBold(false);
-                    doc.text(defLines, defColX, y);
-
-                    y += rowHeight + (lineHeight * 0.5);
-
-                    if (index < jargonGlossary.length - 1) {
-                         doc.setDrawColor(220, 220, 220);
-                         doc.line(MARGIN, y - (lineHeight * 0.25), MARGIN + MAX_WIDTH, y - (lineHeight * 0.25));
-                    }
-                });
-            }
-
-            // --- PDF Footer ---
-            const pageCount = doc.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i); 
-                doc.setFontSize(8); 
-                doc.setTextColor('#666666');
-                const pageNumY = doc.internal.pageSize.getHeight() - 10;
-                doc.text(`${t('pdf_page')} ${i} ${t('pdf_of')} ${pageCount}`, doc.internal.pageSize.getWidth() - MARGIN, pageNumY, { align: 'right' });
-                doc.text(t('pdf_footer_disclaimer'), MARGIN, pageNumY);
-                
-                const footerPrefix = t('pdf_footer_cta_prefix');
-                const footerLink = t('pdf_footer_cta_link');
-                const footerPrefixWidth = doc.getTextWidth(footerPrefix);
-                const footerY = doc.internal.pageSize.getHeight() - 5;
-                doc.setTextColor('#666666');
-                doc.text(footerPrefix, MARGIN, footerY);
-                doc.setTextColor(0, 0, 255); // Blue color for link
-                doc.textWithLink(footerLink, MARGIN + footerPrefixWidth, footerY, { url: appUrl });
-            }
-
-            const pdfDataUri = doc.output('datauristring');
-            const base64PdfData = pdfDataUri.substring(pdfDataUri.indexOf(',') + 1);
-            savePdfToDrive(base64PdfData, pdfDownloadName);
-            doc.save(pdfDownloadName);
-
-        } catch (e) {
-            console.error("PDF Generation Error:", e);
-            setError({
-                title: t('error_pdf_generic_title'),
-                message: t('error_pdf_generic_message')
+        // Red Flags
+        if (redFlags && redFlags.length > 0) {
+            addText(t('report_redflags_title'), 16, 'bold', 6);
+            redFlags.forEach(flag => {
+                addText(flag.flag, 12, 'bold', 4, '#ef4444');
+                addText(flag.explanation, 10, 'normal', 3);
+                if (flag.example) addText(`${t('report_example_prefix')} ${flag.example}`, 10, 'normal', 3);
+                if (flag.citation) addText(`Source: ${flag.citation}`, 8, 'normal', 6);
             });
         }
+        
+        // Negotiation Points
+        if (negotiationPoints && negotiationPoints.length > 0) {
+            addText(t('report_negotiate_title'), 16, 'bold', 6);
+            negotiationPoints.forEach(point => {
+                addText(point.point, 12, 'bold', 4, '#3b82f6');
+                addText(point.explanation, 10, 'normal', 3);
+                if (point.example) addText(`${t('report_example_prefix')} ${point.example}`, 10, 'normal', 6);
+            });
+        }
+
+        // Glossary
+        if (jargonGlossary && jargonGlossary.length > 0) {
+             addText(t('pdf_glossary_title'), 16, 'bold', 6);
+             jargonGlossary.forEach(item => {
+                addText(item.term, 11, 'bold', 2);
+                addText(item.definition, 10, 'normal', 5);
+             });
+        }
+        
+        // Chat History
+        if (chatMessages && chatMessages.length > 0) {
+             addText(t('pdf_chat_history_title'), 16, 'bold', 6);
+             chatMessages.forEach(msg => {
+                const prefix = msg.role === 'user' ? t('pdf_chat_user_prefix') : t('pdf_chat_model_prefix');
+                addText(`${prefix} ${msg.text}`, 10, (msg.role === 'user' ? 'bold' : 'normal'), 5);
+             });
+        }
+        
+        // Finalize footers on all pages
+        const totalPages = doc.getNumberOfPages();
+        for(let i = 1; i <= totalPages; i++){
+            doc.setPage(i);
+            const pageStr = `${t('pdf_page')} ${i} ${t('pdf_of')} ${totalPages}`;
+            doc.setFontSize(8).setTextColor(150);
+            if (isHindi) doc.setFont('NotoSansDevanagari');
+            doc.text(pageStr, pageWidth / 2, pageHeight - 10, { align: 'center' });
+            doc.text(`${t('pdf_footer_disclaimer_title')}: ${t('pdf_footer_disclaimer')}`, margin, pageHeight - 10);
+        }
+
+        const pdfFileName = `${(documentTitle || fileName).replace(/[^a-z0-9]/gi, '_').slice(0, 50)}_Report.pdf`;
+        doc.save(pdfFileName);
+        
+        // Save a backup copy to Google Drive
+        const base64Pdf = doc.output('datauristring').split(',')[1];
+        savePdfToDrive(base64Pdf, pdfFileName);
+        
+      } catch (error) {
+          console.error("PDF generation failed:", error);
+          const errorKey = language === 'hi' ? 'error_pdf_hindi' : 'error_pdf_generic';
+          setError({ title: t(`${errorKey}_title`), message: t(`${errorKey}_message`) });
+      }
     };
 
     const getComplexityInfo = (score: number): { text: string; color: string } => {
@@ -503,7 +481,16 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                 </div>
             )}
 
-            <Section icon={<DocumentTextIcon className="w-6 h-6" />} title={t('report_summary_title')} isLoading={!summary} error={findError('summary')} onRetry={() => onRetry('summary')}>
+            <Section 
+                icon={<DocumentTextIcon className="w-6 h-6" />} 
+                title={t('report_summary_title')} 
+                isLoading={!summary} 
+                error={findError('summary')} 
+                onRetry={() => onRetry('summary')}
+                onPlay={summary ? () => handlePlayAudio('summary', summary) : undefined}
+                isPlaying={playingSection.id === 'summary' && !playingSection.isLoading}
+                isPlayLoading={playingSection.id === 'summary' && playingSection.isLoading}
+            >
                 {summary && <p className="leading-relaxed whitespace-pre-wrap text-lg"><JargonExplainer text={summary} glossary={jargonGlossary} /></p>}
             </Section>
 
@@ -525,14 +512,14 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             </Section>
 
             <div>
-                <div className="flex items-center">
+                 <div className="flex items-center mb-4">
                     <div className="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-lg bg-brand-gold/10 text-brand-gold"><ScaleIcon className="w-6 h-6" /></div>
                     <h3 className="ml-4 text-xl font-bold text-brand-light">{t('report_swot_title')}</h3>
                 </div>
                 {findError('swot') ? (
                     <div className="mt-4"><SectionErrorState message={findError('swot')!.message} onRetry={() => onRetry('swot')} /></div>
                 ) : (
-                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                        <SwotCard title={t('swot_strengths')} items={swot?.strengths} color="text-green-400" icon={<ThumbsUpIcon className="w-5 h-5"/>} glossary={jargonGlossary} isLoading={!swot} />
                        <SwotCard title={t('swot_weaknesses')} items={swot?.weaknesses} color="text-yellow-400" icon={<ThumbsDownIcon className="w-5 h-5"/>} glossary={jargonGlossary} isLoading={!swot} />
                        <SwotCard title={t('swot_opportunities')} items={swot?.opportunities} color="text-blue-400" icon={<LightbulbIcon className="w-5 h-5"/>} glossary={jargonGlossary} isLoading={!swot} />
@@ -541,7 +528,16 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                 )}
             </div>
             
-            <Section icon={<AlertTriangleIcon className="w-6 h-6" />} title={t('report_redflags_title')} isLoading={!redFlags} error={findError('redFlags')} onRetry={() => onRetry('redFlags')}>
+            <Section 
+                icon={<AlertTriangleIcon className="w-6 h-6" />} 
+                title={t('report_redflags_title')} 
+                isLoading={!redFlags} 
+                error={findError('redFlags')} 
+                onRetry={() => onRetry('redFlags')}
+                onPlay={redFlags && redFlags.length > 0 ? () => handlePlayAudio('redFlags', redFlags.map(f => `${f.flag}. ${f.explanation}`).join('\n\n')) : undefined}
+                isPlaying={playingSection.id === 'redFlags' && !playingSection.isLoading}
+                isPlayLoading={playingSection.id === 'redFlags' && playingSection.isLoading}
+            >
                 {redFlags && redFlags.length > 0 ? (
                     <ul className="space-y-4">
                         {redFlags.map((flag, index) => (
@@ -560,7 +556,16 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
                 ) : redFlags && <p className="text-gray-500 italic">{t('report_none_identified')}</p>}
             </Section>
 
-            <Section icon={<HandshakeIcon className="w-6 h-6" />} title={t('report_negotiate_title')} isLoading={!negotiationPoints} error={findError('negotiationPoints')} onRetry={() => onRetry('negotiationPoints')}>
+            <Section 
+                icon={<HandshakeIcon className="w-6 h-6" />} 
+                title={t('report_negotiate_title')} 
+                isLoading={!negotiationPoints} 
+                error={findError('negotiationPoints')} 
+                onRetry={() => onRetry('negotiationPoints')}
+                onPlay={negotiationPoints && negotiationPoints.length > 0 ? () => handlePlayAudio('negotiationPoints', negotiationPoints.map(p => `${p.point}. ${p.explanation}`).join('\n\n')) : undefined}
+                isPlaying={playingSection.id === 'negotiationPoints' && !playingSection.isLoading}
+                isPlayLoading={playingSection.id === 'negotiationPoints' && playingSection.isLoading}
+            >
                  {negotiationPoints && negotiationPoints.length > 0 ? (
                     <ul className="space-y-4">
                         {negotiationPoints.map((point, index) => (

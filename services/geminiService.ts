@@ -1,5 +1,5 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import type { AnalysisResult, SwotAnalysis, RedFlag, NegotiationPoint, JargonTerm } from '../types';
+import { GoogleGenAI, Type, Modality, GenerateContentResponse, Chat } from "@google/genai";
+import type { AnalysisResult, SwotAnalysis, RedFlag, NegotiationPoint, JargonTerm, Message } from '../types';
 import type { Language } from '../translations';
 
 if (!process.env.API_KEY) {
@@ -10,16 +10,13 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const languageMap: Partial<Record<Language, string>> = {
     en: 'English',
-    es: 'Spanish',
-    ar: 'Arabic',
-    zh: 'Chinese (Simplified)',
     hi: 'Hindi',
 };
 
 // Generic function to handle API calls and errors
 async function generateContentWithSchema<T>(prompt: string, schema: any): Promise<T> {
     try {
-        const response = await ai.models.generateContent({
+        const response: GenerateContentResponse = await ai.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
@@ -28,8 +25,9 @@ async function generateContentWithSchema<T>(prompt: string, schema: any): Promis
                 temperature: 0.2,
             },
         });
-        const jsonText = response.text.trim();
-        return JSON.parse(jsonText) as T;
+        // FIX: Access the `text` property directly to get the response text.
+        const jsonText = response.text;
+        return JSON.parse(jsonText.trim()) as T;
     } catch (error) {
         console.error("Error calling Gemini API:", error);
         if (error instanceof Error) {
@@ -181,4 +179,83 @@ export const getJargonGlossary = (analysisText: string, language: Language) => {
     const targetLanguage = languageMap[language] || 'English';
     const prompt = `From the following analysis text, compile a comprehensive list of ALL technical or legal jargon terms used. For each term, provide a very simple, one-sentence definition. Respond in ${targetLanguage}.\n\nANALYSIS TEXT:\n---\n${analysisText}\n---`;
     return generateContentWithSchema<{ jargonGlossary: JargonTerm[] }>(prompt, jargonGlossarySchema);
+};
+
+// --- Function for Text-to-Speech ---
+export const generateSpeech = async (text: string, language: Language): Promise<string> => {
+    try {
+        const targetLanguage = languageMap[language] || 'English';
+
+        // A simple heuristic to pick a voice based on language for better natural sound.
+        // More voices available at: https://ai.google.dev/docs/tts/voices
+        const voiceName = targetLanguage === 'Hindi' ? 'Fenrir' : 'Kore';
+
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ parts: [{ text: `Respond in ${targetLanguage}: ${text}` }] }],
+            config: {
+                responseModalities: [Modality.AUDIO],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: voiceName },
+                    },
+                },
+            },
+        });
+        const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (!base64Audio) {
+            throw new Error("No audio data received from API.");
+        }
+        return base64Audio;
+    } catch (error) {
+        console.error("Error calling Gemini TTS API:", error);
+        if (error instanceof Error) {
+            throw new Error(error.message);
+        }
+        throw new Error("An unknown error occurred while generating speech.");
+    }
+};
+
+// --- Function for Chat ---
+export const getChatResponse = async (documentText: string, history: Message[], newMessage: string, language: Language): Promise<string> => {
+    try {
+        const targetLanguage = languageMap[language] || 'English';
+        const formattedHistory = history.map(msg => ({
+            role: msg.role,
+            parts: [{ text: msg.text }]
+        }));
+
+        // Remove the latest user message from history as it will be the new prompt
+        const chatHistoryForApi = formattedHistory.slice(0, -1);
+
+        const chat: Chat = ai.chats.create({
+            model: 'gemini-2.5-flash',
+            history: chatHistoryForApi,
+            config: {
+                systemInstruction: `You are a helpful AI assistant named LegalIQ.app. The user has provided a legal document and is asking questions about it.
+                - **Your most important rule is to match the user's language.** Detect the language of the user's latest query and respond in the EXACT same language and style.
+                - Keep answers short, concise, and very easy to understand for a non-expert.
+                - Base your answers STRICTLY on the content of the document provided.
+                - If the answer cannot be found in the document, state that clearly in the user's language.
+                - Do NOT provide legal advice. Start your response by directly answering the user's question.
+                - The user's target language is ${targetLanguage}.
+                
+                DOCUMENT:
+                ---
+                ${documentText}
+                ---`,
+                temperature: 0.3,
+            },
+        });
+
+        const response: GenerateContentResponse = await chat.sendMessage({ message: newMessage });
+        
+        return response.text;
+    } catch (error) {
+        console.error("Error calling Gemini Chat API:", error);
+        if (error instanceof Error) {
+            throw new Error(error.message);
+        }
+        throw new Error("An unknown error occurred while communicating with the AI chat service.");
+    }
 };

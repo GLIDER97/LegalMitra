@@ -10,9 +10,6 @@ interface SupportedLangInfo {
 
 const supportedLangs: SupportedLangInfo[] = [
   { code: 'hi', name: 'हिन्दी' },
-  { code: 'es', name: 'Español' },
-  { code: 'ar', name: 'العربية' },
-  { code: 'zh', name: '简体中文' },
 ];
 
 export const LanguagePrompt: React.FC = () => {

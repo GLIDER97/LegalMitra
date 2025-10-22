@@ -23,12 +23,15 @@ import { TrustAndCredibility } from './components/Chatbot';
 import { Testimonials } from './components/Testimonials';
 import { UseCases } from './components/UseCases';
 import { FAQ } from './components/FAQ';
-import { FeedbackButton } from './components/FeedbackButton';
 import { ErrorPopup } from './components/ErrorPopup';
 import { LanguagePrompt } from './components/LanguagePrompt';
 import { BlogContent } from './components/BlogContent';
 import { FeaturedOn } from './components/Loader';
+import { VaniMitra } from './components/VaniMitra';
+import { VaniMitraButton } from './components/VaniMitraButton';
 import { Chat } from './components/Chat';
+import { ChatButton } from './components/ChatButton';
+
 
 // Make Tesseract.js globally available for the component
 declare var Tesseract: any;
@@ -55,6 +58,8 @@ const App: React.FC = () => {
   const [fileName, setFileName] = useState<string>('');
   const [loadingMessageKey, setLoadingMessageKey] = useState<TranslationKeys>('loader_analyzing');
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
+  const [isVaniMitraOpen, setIsVaniMitraOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const intervalRef = useRef<number | null>(null);
   
   const loadingMessages: TranslationKeys[] = [
@@ -140,7 +145,7 @@ const App: React.FC = () => {
             setOcrStatus('Scanned pages detected. Initializing OCR...');
             
             const tesseractLangMap: Record<string, string> = {
-                en: 'eng', es: 'spa', ar: 'ara', zh: 'chi_sim', hi: 'hin',
+                en: 'eng', hi: 'hin',
             };
             const ocrLang = tesseractLangMap[language] || 'eng';
 
@@ -219,7 +224,7 @@ const App: React.FC = () => {
     if (retrySection) {
         setSectionErrors(prev => prev.filter(e => e.section !== retrySection));
     } else {
-        setAnalysisResult({}); // Reset for new analysis
+        setAnalysisResult({} as AnalysisResult); // Reset for new analysis
         setSectionErrors([]);
         setChatMessages([]); // Reset chat history
         const resultsDiv = document.getElementById('analysis-results');
@@ -255,7 +260,7 @@ const App: React.FC = () => {
 
         const results = await Promise.allSettled(analysisTasks);
 
-        const newAnalysisResult: AnalysisResult = retrySection ? { ...analysisResult } : {};
+        const newAnalysisResult: Partial<AnalysisResult> = retrySection ? { ...analysisResult } : {};
         const newSectionErrors: SectionError[] = [];
         let combinedTextForGlossary = '';
 
@@ -272,11 +277,11 @@ const App: React.FC = () => {
                 combinedTextForGlossary += JSON.stringify(data) + '\n';
             } else {
                 console.error(`Error analyzing section ${section}:`, res.reason);
-                newSectionErrors.push({ section, message: res.reason.message || 'Failed to load this section.' });
+                newSectionErrors.push({ section, message: (res.reason as Error).message || 'Failed to load this section.' });
             }
         });
         
-        setAnalysisResult(prev => ({...prev, ...newAnalysisResult}));
+        setAnalysisResult(prev => ({...prev, ...newAnalysisResult} as AnalysisResult));
         setSectionErrors(prev => [...prev.filter(e => !taskMap.includes(e.section)), ...newSectionErrors]);
 
         // Jargon glossary runs after everything else, if it's a full analysis
@@ -284,7 +289,7 @@ const App: React.FC = () => {
             setIsGlossaryLoading(true);
             try {
                 const glossaryResult = await getJargonGlossary(combinedTextForGlossary, language);
-                setAnalysisResult(prev => ({ ...prev, ...glossaryResult }));
+                setAnalysisResult(prev => ({ ...prev, ...glossaryResult } as AnalysisResult));
             } catch (glossaryError: any) {
                 console.error('Error fetching jargon glossary:', glossaryError);
                 setSectionErrors(prev => [...prev, { section: 'jargonGlossary', message: glossaryError.message || 'Failed to load glossary.' }]);
@@ -309,6 +314,8 @@ const App: React.FC = () => {
     // This effect should ONLY run when the language changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
+
+  const isInteractionDisabled = !analysisResult || Object.keys(analysisResult).length === 0 || isLoading || isParsing;
 
 
   return (
@@ -345,7 +352,7 @@ const App: React.FC = () => {
             {(isLoading || (analysisResult && Object.keys(analysisResult).length > 0)) && !isParsing && (
                  <div className="w-full lg:w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <AnalysisReport 
-                        result={analysisResult || {}} 
+                        result={analysisResult || {} as AnalysisResult} 
                         fileName={fileName}
                         setError={setError}
                         isLoading={isLoading && (!analysisResult || Object.keys(analysisResult).length === 0)}
@@ -376,15 +383,40 @@ const App: React.FC = () => {
       </main>
       <FeaturedOn />
       <Footer />
-      <LanguageSwitcher />
-      <FeedbackButton />
+      
+      {/* Floating Action Buttons Container */}
+      <div className="fixed bottom-5 right-5 z-40 flex flex-col-reverse items-end gap-4">
+          <LanguageSwitcher />
+          <VaniMitraButton 
+            onClick={() => setIsVaniMitraOpen(true)}
+            disabled={isInteractionDisabled}
+          />
+          <ChatButton 
+            onClick={() => setIsChatOpen(true)}
+            disabled={isInteractionDisabled}
+          />
+      </div>
+
       <LanguagePrompt />
-      {analysisResult && Object.keys(analysisResult).length > 0 && !isLoading && !isParsing && (
-        <Chat 
-            documentText={documentText} 
-            messages={chatMessages}
-            setMessages={setChatMessages}
-        />
+
+      {/* Modals */}
+       {analysisResult && Object.keys(analysisResult).length > 0 && (
+        <>
+            <VaniMitra 
+                isOpen={isVaniMitraOpen}
+                onClose={() => setIsVaniMitraOpen(false)}
+                documentText={documentText}
+                chatHistory={chatMessages}
+                setChatHistory={setChatMessages}
+            />
+            <Chat 
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+                documentText={documentText}
+                chatHistory={chatMessages}
+                setChatHistory={setChatMessages}
+            />
+        </>
       )}
     </div>
   );

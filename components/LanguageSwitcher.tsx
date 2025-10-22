@@ -20,9 +20,6 @@ export const LanguageSwitcher: React.FC = () => {
   const languages: { code: Language; name: string }[] = [
     { code: 'en', name: 'English' },
     { code: 'hi', name: 'हिन्दी' },
-    { code: 'es', name: 'Español' },
-    { code: 'ar', name: 'العربية' },
-    { code: 'zh', name: '简体中文' },
   ];
 
   const handleMouseEnter = () => {
@@ -45,7 +42,7 @@ export const LanguageSwitcher: React.FC = () => {
 
   return (
     <div
-      className="fixed bottom-5 right-5 z-50"
+      className="relative z-50"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >

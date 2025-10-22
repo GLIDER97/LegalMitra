@@ -1,5 +1,7 @@
 {
   "name": "LegalIQ.app_v2",
   "description": "Your trusted friend for legal clarity. LegalIQ.app helps you understand complex legal documents in simple terms, offering AI-powered analysis and insights to empower people everywhere. Legal Clarity. Instantly.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }
