@@ -13,6 +13,45 @@ const languageMap: Partial<Record<Language, string>> = {
     hi: 'Hindi',
 };
 
+/**
+ * Handles errors from the Gemini API, converting them into user-friendly messages.
+ * @param error - The error caught from the API call.
+ * @throws A new Error with a user-friendly message.
+ */
+function handleGeminiError(error: unknown): never {
+    console.error("Error calling Gemini API:", error);
+    if (error instanceof Error) {
+        const errorMessage = error.message.toLowerCase();
+        
+        // Invalid API Key - This is a server configuration issue, not user-fixable.
+        if (errorMessage.includes('api key not valid') || errorMessage.includes('permission denied')) {
+            throw new Error("Service Configuration Error: There's an issue with the application's connection to the AI service. Please try again later, as our team is likely already addressing it.");
+        }
+
+        // Rate Limiting
+        if (errorMessage.includes('rate limit') || errorMessage.includes('resource has been exhausted')) {
+            throw new Error("High Demand: The AI service is currently experiencing high demand. Please wait a moment and try your request again.");
+        }
+
+        // Network Issues (client-side)
+        if (errorMessage.includes('failed to fetch')) {
+             throw new Error("Network Error: Could not connect to the AI service. Please check your internet connection and retry.");
+        }
+
+        // Server-side errors from the API
+        if (errorMessage.includes('500') || errorMessage.includes('503') || errorMessage.includes('internal')) {
+             throw new Error("AI Service Unavailable: The service is currently experiencing technical difficulties. Please try again in a few minutes.");
+        }
+        
+        // For other API errors, provide a generic but informative message.
+        throw new Error("An unexpected error occurred while communicating with the AI. Please try again.");
+    }
+
+    // Fallback for non-Error objects
+    throw new Error("An unknown error occurred while communicating with the AI service. Please try again.");
+}
+
+
 // Generic function to handle API calls and errors
 async function generateContentWithSchema<T>(prompt: string, schema: any): Promise<T> {
     try {
@@ -25,15 +64,10 @@ async function generateContentWithSchema<T>(prompt: string, schema: any): Promis
                 temperature: 0.2,
             },
         });
-        // FIX: Access the `text` property directly to get the response text.
         const jsonText = response.text;
         return JSON.parse(jsonText.trim()) as T;
     } catch (error) {
-        console.error("Error calling Gemini API:", error);
-        if (error instanceof Error) {
-            throw new Error(error.message);
-        }
-        throw new Error("An unknown error occurred while communicating with the AI service.");
+        handleGeminiError(error);
     }
 }
 
@@ -208,11 +242,7 @@ export const generateSpeech = async (text: string, language: Language): Promise<
         }
         return base64Audio;
     } catch (error) {
-        console.error("Error calling Gemini TTS API:", error);
-        if (error instanceof Error) {
-            throw new Error(error.message);
-        }
-        throw new Error("An unknown error occurred while generating speech.");
+        handleGeminiError(error);
     }
 };
 
@@ -258,10 +288,6 @@ export const getChatResponse = async (documentText: string, analysisResult: Anal
         
         return response.text;
     } catch (error) {
-        console.error("Error calling Gemini Chat API:", error);
-        if (error instanceof Error) {
-            throw new Error(error.message);
-        }
-        throw new Error("An unknown error occurred while communicating with the AI chat service.");
+        handleGeminiError(error);
     }
 };
