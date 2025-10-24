@@ -210,6 +210,35 @@ const commonTranslations = {
         en: 'LegalIQ:',
         hi: 'लीगलआईक्यू:',
     },
+    // Grounding
+    grounding_button: {
+        en: 'Act as Legal Guardian & Check State law',
+        hi: 'कानूनी अभिभावक के रूप में कार्य करें और राज्य के कानून की जाँच करें',
+    },
+    grounding_searching: {
+        en: 'Searching...',
+        hi: 'खोज हो रही है...',
+    },
+    grounding_relevant_law: {
+        en: 'Relevant Indian Law',
+        hi: 'प्रासंगिक भारतीय कानून',
+    },
+    grounding_real_world: {
+        en: 'Real-World Examples (News)',
+        hi: 'वास्तविक-दुनिया के उदाहरण (समाचार)',
+    },
+    grounding_sources: {
+        en: 'Sources',
+        hi: 'स्रोत',
+    },
+    grounding_not_found: {
+        en: 'No specific Indian laws or recent news articles were found for this point.',
+        hi: 'इस बिंदु के लिए कोई विशिष्ट भारतीय कानून या हालिया समाचार लेख नहीं मिले।',
+    },
+    grounding_error_prefix: {
+        en: 'Error:',
+        hi: 'त्रुटि:',
+    },
 };
 
 const emotionalCopy = {

@@ -1,9 +1,9 @@
 import React from 'react';
 import { jsPDF } from 'jspdf';
-import type { AnalysisResult, JargonTerm, SectionError, Message } from '../types';
+import type { AnalysisResult, JargonTerm, SectionError, Message, RedFlag, GroundingInfo } from '../types';
 // FIX: Import `TranslationKeys` which is now properly exported.
 import type { TranslationKeys } from '../translations';
-import { generateSpeech } from '../services/geminiService';
+import { generateSpeech, getRealWorldGrounding } from '../services/geminiService';
 import { 
     DownloadIcon, 
     AlertTriangleIcon, 
@@ -16,7 +16,9 @@ import {
     LightbulbIcon,
     SpeakerWaveIcon,
     StopCircleIcon,
-    SpinnerIcon
+    SpinnerIcon,
+    ShieldSearchIcon,
+    ChevronDownIcon
 } from './Icons';
 import { useTranslations, useLanguage } from '../hooks/useTranslations';
 import { NotoSansDevanagariRegular } from './NotoSansDevanagariFont';
@@ -200,6 +202,8 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
     const { language } = useLanguage();
     const { documentTitle, swot, redFlags, complexityScore, summary, negotiationPoints, jargonGlossary } = result;
     
+    const [groundingData, setGroundingData] = React.useState<Record<number, GroundingInfo | 'loading' | { error: string }>>({});
+    const [openGroundingIndexes, setOpenGroundingIndexes] = React.useState<Set<number>>(new Set());
     const audioContextRef = React.useRef<AudioContext | null>(null);
     const audioSourceRef = React.useRef<AudioBufferSourceNode | null>(null);
     const [playingSection, setPlayingSection] = React.useState<{ id: string, isLoading: boolean }>({ id: '', isLoading: false });
@@ -261,6 +265,37 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
         }
 
     }, [language, playingSection.id, handleStopAudio, setError]);
+
+
+    const handleGroundingSearch = React.useCallback(async (index: number, flag: RedFlag) => {
+        setGroundingData(prev => ({ ...prev, [index]: 'loading' }));
+        try {
+            const flagText = `${flag.flag}: ${flag.explanation}`;
+            const groundingResult = await getRealWorldGrounding(flagText, language);
+            setGroundingData(prev => ({ ...prev, [index]: groundingResult }));
+        } catch (e: any) {
+            console.error(`Grounding search failed for flag ${index}:`, e);
+            setGroundingData(prev => ({ ...prev, [index]: { error: e.message || 'An unknown error occurred.' } }));
+        }
+    }, [language]);
+    
+    const handleToggleGrounding = React.useCallback((index: number, flag: RedFlag) => {
+        const hasData = groundingData[index] && groundingData[index] !== 'loading';
+        
+        setOpenGroundingIndexes(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(index)) {
+                newSet.delete(index);
+            } else {
+                newSet.add(index);
+            }
+            return newSet;
+        });
+
+        if (!hasData) {
+            handleGroundingSearch(index, flag);
+        }
+    }, [groundingData, handleGroundingSearch]);
 
 
     const findError = (section: keyof AnalysisResult) => sectionErrors.find(e => e.section === section) || null;
@@ -540,18 +575,114 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
             >
                 {redFlags && redFlags.length > 0 ? (
                     <ul className="space-y-4">
-                        {redFlags.map((flag, index) => (
-                            <li key={index} className="p-4 bg-red-900/30 border-l-4 border-red-500 rounded-r-md">
-                                <div className="flex items-start"><AlertTriangleIcon className="h-5 w-5 text-red-400 mt-1 flex-shrink-0"/>
-                                    <div className="ml-3 flex-1">
-                                        <h4 className="font-bold text-red-300">{flag.flag}</h4>
-                                        <p className="mt-1 text-gray-300 whitespace-pre-wrap"><JargonExplainer text={flag.explanation} glossary={jargonGlossary} /></p>
-                                        {flag.example && <p className="mt-2 text-red-200/90 whitespace-pre-wrap font-bold italic">{t('report_example_prefix')} {flag.example}</p>}
-                                        {flag.citation && <div className="mt-2 flex items-center gap-2 text-sm text-red-200/70"><DocumentTextIcon className="h-4 w-4" /><span className="font-semibold text-red-200">Source: <span className="font-normal">{flag.citation}</span></span></div>}
+                        {redFlags.map((flag, index) => {
+                            const groundingResult = groundingData[index];
+                            const isGroundingLoading = groundingResult === 'loading';
+                            const isGroundingOpen = openGroundingIndexes.has(index);
+
+                            return (
+                                <li key={index} className="p-4 bg-red-900/30 border-l-4 border-red-500 rounded-r-md">
+                                    <div className="flex items-start"><AlertTriangleIcon className="h-5 w-5 text-red-400 mt-1 flex-shrink-0"/>
+                                        <div className="ml-3 flex-1">
+                                            <h4 className="font-bold text-red-300">{flag.flag}</h4>
+                                            <p className="mt-1 text-gray-300 whitespace-pre-wrap"><JargonExplainer text={flag.explanation} glossary={jargonGlossary} /></p>
+                                            {flag.example && <p className="mt-2 text-red-200/90 whitespace-pre-wrap font-bold italic">{t('report_example_prefix')} {flag.example}</p>}
+                                            {flag.citation && <div className="mt-2 flex items-center gap-2 text-sm text-red-200/70"><DocumentTextIcon className="h-4 w-4" /><span className="font-semibold text-red-200">Source: <span className="font-normal">{flag.citation}</span></span></div>}
+                                            
+                                            <div className="mt-4">
+                                                <button
+                                                    onClick={() => handleToggleGrounding(index, flag)}
+                                                    disabled={isGroundingLoading}
+                                                    className="inline-flex items-center justify-between w-full sm:w-auto gap-2 px-4 py-2 border border-brand-gold/50 text-base font-medium rounded-md text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-card focus:ring-brand-gold transition-all disabled:opacity-50 disabled:cursor-wait"
+                                                    aria-expanded={isGroundingOpen}
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        {isGroundingLoading ? (
+                                                            <SpinnerIcon className="h-5 w-5 animate-spin" />
+                                                        ) : (
+                                                            <ShieldSearchIcon className="h-5 w-5" />
+                                                        )}
+                                                        <span>{isGroundingLoading ? t('grounding_searching') : t('grounding_button')}</span>
+                                                    </div>
+                                                    {!isGroundingLoading && (
+                                                        <ChevronDownIcon className={`h-5 w-5 transition-transform duration-300 ${isGroundingOpen ? 'rotate-180' : ''}`} />
+                                                    )}
+                                                </button>
+                                            </div>
+
+                                            <div className={`grid transition-all duration-500 ease-in-out ${isGroundingOpen ? 'grid-rows-[1fr] mt-4' : 'grid-rows-[0fr]'}`}>
+                                                <div className="overflow-hidden">
+                                                    {groundingResult && typeof groundingResult === 'object' && 'error' in groundingResult && (
+                                                        <div className="p-3 bg-red-900/20 border border-red-800 rounded-lg text-sm text-red-300">
+                                                            <p><strong className="font-semibold">{t('grounding_error_prefix')}</strong> {groundingResult.error}</p>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {groundingResult && typeof groundingResult === 'object' && !('error' in groundingResult) && (
+                                                        <div className="space-y-4 p-4 bg-brand-dark/30 rounded-lg border border-gray-700">
+                                                            {(groundingResult.legalCitations?.length ?? 0) > 0 && (
+                                                                <div>
+                                                                    <h5 className="font-bold text-gray-200">{t('grounding_relevant_law')}</h5>
+                                                                    <ul className="mt-2 space-y-3">
+                                                                        {groundingResult.legalCitations?.map((cite, i) => {
+                                                                            const lawSearchQuery = encodeURIComponent(`${cite.lawName} ${cite.section}`);
+                                                                            const lawSearchUrl = `https://www.google.com/search?q=${lawSearchQuery}`;
+                                                                            return (
+                                                                                <li key={i} className="text-sm p-3 bg-gray-800/50 rounded-md">
+                                                                                    <p>
+                                                                                        <a href={lawSearchUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-brand-gold underline hover:text-yellow-300">
+                                                                                            {cite.lawName} - {cite.section}
+                                                                                        </a>
+                                                                                    </p>
+                                                                                    <p className="text-gray-300 mt-1">{cite.explanation}</p>
+                                                                                </li>
+                                                                            );
+                                                                        })}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+
+                                                            {(groundingResult.newsArticles?.length ?? 0) > 0 && (
+                                                                <div>
+                                                                    <h5 className="font-bold text-gray-200">{t('grounding_real_world')}</h5>
+                                                                    <ul className="mt-2 space-y-3">
+                                                                        {groundingResult.newsArticles?.map((article, i) => {
+                                                                            const newsSearchQuery = encodeURIComponent(article.title);
+                                                                            const newsSearchUrl = `https://www.google.com/search?q=${newsSearchQuery}`;
+                                                                            return (
+                                                                                <li key={i} className="text-sm">
+                                                                                    <a href={newsSearchUrl} target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-400 underline hover:text-blue-300">{article.title}</a>
+                                                                                    <p className="text-gray-400 mt-1">{article.summary}</p>
+                                                                                </li>
+                                                                            );
+                                                                        })}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+                                                            
+                                                             {(groundingResult.sources?.length ?? 0) > 0 && (
+                                                                <div className="pt-3 mt-3 border-t border-gray-700">
+                                                                    <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('grounding_sources')}</h5>
+                                                                    <div className="mt-2 text-xs text-gray-400 space-y-1">
+                                                                        {groundingResult.sources?.map((source, i) => (
+                                                                            source.web && <a key={i} href={source.web.uri} target="_blank" rel="noopener noreferrer" className="block truncate underline hover:text-gray-200" title={source.web.uri}>{source.web.title || source.web.uri}</a>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {(groundingResult.legalCitations?.length ?? 0) === 0 && (groundingResult.newsArticles?.length ?? 0) === 0 && (
+                                                                <p className="text-sm text-gray-500 italic">{t('grounding_not_found')}</p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </li>
-                        ))}
+                                </li>
+                            )
+                        })}
                     </ul>
                 ) : redFlags && <p className="text-gray-500 italic">{t('report_none_identified')}</p>}
             </Section>

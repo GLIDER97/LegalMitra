@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Modality, GenerateContentResponse, Chat } from "@google/genai";
-import type { AnalysisResult, SwotAnalysis, RedFlag, NegotiationPoint, JargonTerm, Message } from '../types';
+import type { AnalysisResult, SwotAnalysis, RedFlag, NegotiationPoint, JargonTerm, Message, GroundingInfo } from '../types';
 import type { Language } from '../translations';
 
 if (!process.env.API_KEY) {
@@ -44,7 +44,7 @@ function handleGeminiError(error: unknown): never {
         }
         
         // For other API errors, provide a generic but informative message.
-        throw new Error("An unexpected error occurred while communicating with the AI. Please try again.");
+        throw new Error(error.message || "An unexpected error occurred while communicating with the AI. Please try again.");
     }
 
     // Fallback for non-Error objects
@@ -213,6 +213,53 @@ export const getJargonGlossary = (analysisText: string, language: Language) => {
     const targetLanguage = languageMap[language] || 'English';
     const prompt = `From the following analysis text, compile a comprehensive list of ALL technical or legal jargon terms used. For each term, provide a very simple, one-sentence definition. Respond in ${targetLanguage}.\n\nANALYSIS TEXT:\n---\n${analysisText}\n---`;
     return generateContentWithSchema<{ jargonGlossary: JargonTerm[] }>(prompt, jargonGlossarySchema);
+};
+
+// --- Function for Real-World Grounding ---
+export const getRealWorldGrounding = async (flagText: string, language: Language): Promise<GroundingInfo> => {
+    const targetLanguage = languageMap[language] || 'English';
+    const prompt = `As a "Legal Guardian," analyze the following legal risk: "${flagText}".
+Your task is to find grounding information using Google Search and format it as a JSON object.
+
+Instructions:
+1.  **Indian Law:** Search for relevant Indian laws, prioritizing results from government sites like "indiacode.nic.in". For each law found, provide the full official name of the law (e.g., "The Indian Contract Act, 1872") and the specific section number (e.g., "Section 25"). Provide a simple explanation.
+2.  **News Articles:** Search for up to 5 recent, relevant news articles that illustrate this risk. For each article, provide its title, a very short summary, and its **full, valid, and direct URL**. It is critical that the URL is copied exactly from the search result and is not shortened, summarized, or invented.
+3.  **JSON Output:** Respond ONLY with a JSON object with two keys: "legalCitations" and "newsArticles". The schema must be:
+    - legalCitations: [{ "lawName": "...", "section": "...", "explanation": "..." }]
+    - newsArticles: [{ "title": "...", "url": "...", "summary": "..." }]
+4.  **Language:** The entire response must be in ${targetLanguage}.
+5.  **No Results:** If you cannot find relevant information for a category, return an empty array for that key (e.g., "newsArticles": []). Do not invent information.
+
+Legal Risk to Analyze: "${flagText}"`;
+
+    try {
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: {
+                tools: [{ googleSearch: {} }],
+            },
+        });
+        
+        let parsedResult: Partial<GroundingInfo>;
+        const textResponse = response.text.trim();
+        const jsonMatch = textResponse.match(/```json\s*([\s\S]*?)\s*```/);
+        const jsonText = jsonMatch ? jsonMatch[1] : textResponse;
+        
+        try {
+            parsedResult = JSON.parse(jsonText);
+        } catch (e) {
+            console.error("Failed to parse grounding response as JSON:", jsonText);
+            throw new Error("The AI returned an invalid format for the real-world context. Please try again.");
+        }
+
+        const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks as GroundingInfo['sources'] || [];
+        
+        return { ...parsedResult, sources };
+
+    } catch (error) {
+        handleGeminiError(error);
+    }
 };
 
 // --- Function for Text-to-Speech ---

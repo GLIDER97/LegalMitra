@@ -23,6 +23,31 @@ export interface JargonTerm {
   definition: string;
 }
 
+export interface LegalCitation {
+  lawName: string;
+  section: string;
+  explanation: string;
+}
+
+export interface NewsArticle {
+  title: string;
+  url: string;
+  summary: string;
+}
+
+export interface GroundingSource {
+    web: {
+      uri: string;
+      title: string;
+    }
+}
+
+export interface GroundingInfo {
+  legalCitations?: LegalCitation[];
+  newsArticles?: NewsArticle[];
+  sources?: GroundingSource[];
+}
+
 export interface AnalysisResult {
   documentTitle?: string;
   swot?: SwotAnalysis;

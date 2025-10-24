@@ -246,6 +246,14 @@ export const SearchIcon: React.FC<IconProps> = ({ className }) => (
     </svg>
 );
 
+export const ShieldSearchIcon: React.FC<IconProps> = ({ className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className={className}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.75c5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286a11.959 11.959 0 00-8.25 3.286H3.6c-.388 1.18-.598 2.44-.598 3.75 0 5.592 3.824 10.29 9 11.622z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.25a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17.625 12.125l2.625 2.625" />
+    </svg>
+);
+
 export const ChevronUpIcon: React.FC<IconProps> = ({ className }) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
