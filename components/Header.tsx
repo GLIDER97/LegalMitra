@@ -1,5 +1,5 @@
 import React from 'react';
-import { LegalIqLogoIcon, LawBookIcon, MenuIcon, XMarkIcon } from './Icons';
+import { LegalIqLogoIcon, SparklesIcon, MenuIcon, XMarkIcon } from './Icons';
 import { useTranslations } from '../hooks/useTranslations';
 import { Navbar } from './Navbar';
 
@@ -43,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLegalSupport, isMobileMenu
                   onClick={onOpenLegalSupport}
                   className="inline-flex items-center gap-2 px-3 py-2 border border-brand-gold/80 text-sm font-medium rounded-md shadow-sm text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-card focus:ring-brand-gold transition-all"
               >
-                  <LawBookIcon className="h-5 w-5" />
+                  <SparklesIcon className="h-5 w-5" />
                   <span className="hidden sm:inline">{t('ai_legal_support_button_label')}</span>
               </button>
             </div>
@@ -51,9 +51,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLegalSupport, isMobileMenu
             <div className="md:hidden flex items-center">
                <button
                   onClick={onOpenLegalSupport}
-                  className="inline-flex items-center p-2 border border-brand-gold/80 text-sm font-medium rounded-md shadow-sm text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20 mr-2"
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-brand-gold/80 text-sm font-medium rounded-md shadow-sm text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20 mr-2"
               >
-                  <LawBookIcon className="h-5 w-5" />
+                  <SparklesIcon className="h-5 w-5" />
+                  <span className="text-xs">{t('ai_legal_support_button_label')}</span>
               </button>
               <button onClick={toggleMobileMenu} className="inline-flex items-center justify-center p-2 rounded-md text-brand-gold hover:bg-brand-gold/20 focus:outline-none">
                 <span className="sr-only">Open main menu</span>
