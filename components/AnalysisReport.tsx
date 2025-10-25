@@ -22,7 +22,6 @@ import {
 } from './Icons';
 import { useTranslations, useLanguage } from '../hooks/useTranslations';
 import { NotoSansDevanagariRegular } from './NotoSansDevanagariFont';
-import { savePdfToDrive } from '../services/driveService';
 
 interface AnalysisReportProps {
     result: AnalysisResult;
@@ -301,167 +300,156 @@ export const AnalysisReport: React.FC<AnalysisReportProps> = ({ result, fileName
     const findError = (section: keyof AnalysisResult) => sectionErrors.find(e => e.section === section) || null;
 
     const handleDownloadPdf = () => {
-      try {
-        const doc = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: 'a4',
-        });
+        if (language !== 'en') {
+            setError({ title: t('error_pdf_language_title'), message: t('error_pdf_language_message') });
+            return;
+        }
+        
+        try {
+            const doc = new jsPDF({
+                orientation: 'p',
+                unit: 'mm',
+                format: 'a4',
+            });
 
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 15;
-        const contentWidth = pageWidth - margin * 2;
-        let y = margin;
-        let pageNum = 1;
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 15;
+            const contentWidth = pageWidth - margin * 2;
+            let y = margin;
+            let pageNum = 1;
 
-        const isHindi = language === 'hi';
-
-        if (isHindi) {
-            doc.addFileToVFS('NotoSansDevanagari-Regular.ttf', NotoSansDevanagariRegular);
-            doc.addFont('NotoSansDevanagari-Regular.ttf', 'NotoSansDevanagari', 'normal');
-            doc.setFont('NotoSansDevanagari');
-        } else {
             doc.setFont('helvetica');
-        }
-        
-        const addPageIfNeeded = (spaceNeeded: number) => {
-            if (y + spaceNeeded > pageHeight - margin) {
-                addFooter();
-                doc.addPage();
-                pageNum++;
-                y = margin;
-                addHeader();
+            
+            const addPageIfNeeded = (spaceNeeded: number) => {
+                if (y + spaceNeeded > pageHeight - margin) {
+                    addFooter();
+                    doc.addPage();
+                    pageNum++;
+                    y = margin;
+                    addHeader();
+                }
+            };
+
+            const addHeader = () => {
+                doc.setFontSize(10);
+                doc.setTextColor(150);
+                doc.text(t('pdf_analysis_by'), pageWidth / 2, 10, { align: 'center' });
+            };
+            
+            const addFooter = () => {
+                doc.setFontSize(8);
+                doc.setTextColor(150);
+                const pageStr = `${t('pdf_page')} ${pageNum} ${t('pdf_of')}`;
+                doc.text(pageStr, pageWidth / 2, pageHeight - 10, { align: 'center' });
+                doc.text(`${t('pdf_footer_disclaimer_title')}: ${t('pdf_footer_disclaimer')}`, margin, pageHeight - 10);
+            };
+            
+            const addText = (text: string, size: number, style: 'normal' | 'bold' = 'normal', spaceAfter = 5, color = '#000000') => {
+                const lines = doc.splitTextToSize(text, contentWidth);
+                addPageIfNeeded(lines.length * (size / 2.5) + spaceAfter);
+                doc.setFontSize(size);
+                doc.setFont('helvetica', style);
+                doc.setTextColor(color);
+                doc.text(lines, margin, y);
+                y += (lines.length * (size / 2.5)) + spaceAfter;
+            };
+
+            addHeader();
+
+            // ---- PDF CONTENT ----
+            
+            // Main Title
+            addText(t('report_title'), 22, 'bold', 4, '#D4AF37');
+            addText(`${t('pdf_for_document')} "${documentTitle || fileName}"`, 12, 'normal', 4, '#333333');
+            addText(`${t('pdf_generated_on')} ${new Date().toLocaleDateString()}`, 10, 'normal', 10, '#888888');
+
+            // Summary
+            if (summary) {
+                addText(t('report_summary_title'), 16, 'bold', 6);
+                addText(summary, 10, 'normal', 10);
             }
-        };
 
-        const addHeader = () => {
-            doc.setFontSize(10);
-            doc.setTextColor(150);
-            doc.text(t('pdf_analysis_by'), pageWidth / 2, 10, { align: 'center' });
-        };
-        
-        const addFooter = () => {
-            doc.setFontSize(8);
-            doc.setTextColor(150);
-            const pageStr = `${t('pdf_page')} ${pageNum} ${t('pdf_of')}`;
-            const totalPages = doc.getNumberOfPages(); // This will be incorrect until all pages are added
-            doc.text(pageStr, pageWidth / 2, pageHeight - 10, { align: 'center' });
-            doc.text(`${t('pdf_footer_disclaimer_title')}: ${t('pdf_footer_disclaimer')}`, margin, pageHeight - 10);
-        };
-        
-        const addText = (text: string, size: number, style: 'normal' | 'bold' = 'normal', spaceAfter = 5, color = '#000000') => {
-            const lines = doc.splitTextToSize(text, contentWidth);
-            addPageIfNeeded(lines.length * (size / 2.5) + spaceAfter);
-            doc.setFontSize(size);
-            doc.setFont('helvetica', style);
-            if (isHindi) doc.setFont('NotoSansDevanagari', 'normal'); // Bold not supported by this font file
-            doc.setTextColor(color);
-            doc.text(lines, margin, y);
-            y += (lines.length * (size / 2.5)) + spaceAfter;
-        };
+            // Complexity
+            if (complexityScore !== undefined) {
+                 addText(t('report_complexity_title'), 16, 'bold', 6);
+                 const { text: complexityText } = getComplexityInfo(complexityScore);
+                 addText(`${complexityScore}/10 - ${complexityText}`, 12, 'bold', 10);
+            }
+            
+            // SWOT
+            if(swot) {
+                addText(t('report_swot_title'), 16, 'bold', 6);
+                addText(t('swot_strengths'), 12, 'bold', 4, '#22c55e');
+                swot.strengths.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
+                y += 5;
+                addText(t('swot_weaknesses'), 12, 'bold', 4, '#facc15');
+                swot.weaknesses.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
+                y += 5;
+                addText(t('swot_opportunities'), 12, 'bold', 4, '#3b82f6');
+                swot.opportunities.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
+                y += 5;
+                addText(t('swot_threats'), 12, 'bold', 4, '#ef4444');
+                swot.threats.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
+                y += 10;
+            }
 
-        addHeader();
+            // Red Flags
+            if (redFlags && redFlags.length > 0) {
+                addText(t('report_redflags_title'), 16, 'bold', 6);
+                redFlags.forEach(flag => {
+                    addText(flag.flag, 12, 'bold', 4, '#ef4444');
+                    addText(flag.explanation, 10, 'normal', 3);
+                    if (flag.example) addText(`${t('report_example_prefix')} ${flag.example}`, 10, 'normal', 3);
+                    if (flag.citation) addText(`Source: ${flag.citation}`, 8, 'normal', 6);
+                });
+            }
+            
+            // Negotiation Points
+            if (negotiationPoints && negotiationPoints.length > 0) {
+                addText(t('report_negotiate_title'), 16, 'bold', 6);
+                negotiationPoints.forEach(point => {
+                    addText(point.point, 12, 'bold', 4, '#3b82f6');
+                    addText(point.explanation, 10, 'normal', 3);
+                    if (point.example) addText(`${t('report_example_prefix')} ${point.example}`, 10, 'normal', 6);
+                });
+            }
 
-        // ---- PDF CONTENT ----
-        
-        // Main Title
-        addText(t('report_title'), 22, 'bold', 4, '#D4AF37');
-        addText(`${t('pdf_for_document')} "${documentTitle || fileName}"`, 12, 'normal', 4, '#333333');
-        addText(`${t('pdf_generated_on')} ${new Date().toLocaleDateString()}`, 10, 'normal', 10, '#888888');
+            // Glossary
+            if (jargonGlossary && jargonGlossary.length > 0) {
+                 addText(t('pdf_glossary_title'), 16, 'bold', 6);
+                 jargonGlossary.forEach(item => {
+                    addText(item.term, 11, 'bold', 2);
+                    addText(item.definition, 10, 'normal', 5);
+                 });
+            }
+            
+            // Chat History
+            if (chatMessages && chatMessages.length > 0) {
+                 addText(t('pdf_chat_history_title'), 16, 'bold', 6);
+                 chatMessages.forEach(msg => {
+                    const prefix = msg.role === 'user' ? t('pdf_chat_user_prefix') : t('pdf_chat_model_prefix');
+                    addText(`${prefix} ${msg.text}`, 10, (msg.role === 'user' ? 'bold' : 'normal'), 5);
+                 });
+            }
+            
+            // Finalize footers on all pages
+            const totalPages = doc.getNumberOfPages();
+            for(let i = 1; i <= totalPages; i++){
+                doc.setPage(i);
+                const pageStr = `${t('pdf_page')} ${i} ${t('pdf_of')} ${totalPages}`;
+                doc.setFontSize(8).setTextColor(150);
+                doc.text(pageStr, pageWidth / 2, pageHeight - 10, { align: 'center' });
+                doc.text(`${t('pdf_footer_disclaimer_title')}: ${t('pdf_footer_disclaimer')}`, margin, pageHeight - 10);
+            }
 
-        // Summary
-        if (summary) {
-            addText(t('report_summary_title'), 16, 'bold', 6);
-            addText(summary, 10, 'normal', 10);
+            const pdfFileName = `${(documentTitle || fileName).replace(/[^a-z0-9]/gi, '_').slice(0, 50)}_Report.pdf`;
+            doc.save(pdfFileName);
+            
+        } catch (error) {
+            console.error("PDF generation failed:", error);
+            setError({ title: t('error_pdf_generic_title'), message: t('error_pdf_generic_message') });
         }
-
-        // Complexity
-        if (complexityScore !== undefined) {
-             addText(t('report_complexity_title'), 16, 'bold', 6);
-             const { text: complexityText } = getComplexityInfo(complexityScore);
-             addText(`${complexityScore}/10 - ${complexityText}`, 12, 'bold', 10);
-        }
-        
-        // SWOT
-        if(swot) {
-            addText(t('report_swot_title'), 16, 'bold', 6);
-            addText(t('swot_strengths'), 12, 'bold', 4, '#22c55e');
-            swot.strengths.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
-            y += 5;
-            addText(t('swot_weaknesses'), 12, 'bold', 4, '#facc15');
-            swot.weaknesses.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
-            y += 5;
-            addText(t('swot_opportunities'), 12, 'bold', 4, '#3b82f6');
-            swot.opportunities.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
-            y += 5;
-            addText(t('swot_threats'), 12, 'bold', 4, '#ef4444');
-            swot.threats.forEach(s => addText(`• ${s}`, 10, 'normal', 3));
-            y += 10;
-        }
-
-        // Red Flags
-        if (redFlags && redFlags.length > 0) {
-            addText(t('report_redflags_title'), 16, 'bold', 6);
-            redFlags.forEach(flag => {
-                addText(flag.flag, 12, 'bold', 4, '#ef4444');
-                addText(flag.explanation, 10, 'normal', 3);
-                if (flag.example) addText(`${t('report_example_prefix')} ${flag.example}`, 10, 'normal', 3);
-                if (flag.citation) addText(`Source: ${flag.citation}`, 8, 'normal', 6);
-            });
-        }
-        
-        // Negotiation Points
-        if (negotiationPoints && negotiationPoints.length > 0) {
-            addText(t('report_negotiate_title'), 16, 'bold', 6);
-            negotiationPoints.forEach(point => {
-                addText(point.point, 12, 'bold', 4, '#3b82f6');
-                addText(point.explanation, 10, 'normal', 3);
-                if (point.example) addText(`${t('report_example_prefix')} ${point.example}`, 10, 'normal', 6);
-            });
-        }
-
-        // Glossary
-        if (jargonGlossary && jargonGlossary.length > 0) {
-             addText(t('pdf_glossary_title'), 16, 'bold', 6);
-             jargonGlossary.forEach(item => {
-                addText(item.term, 11, 'bold', 2);
-                addText(item.definition, 10, 'normal', 5);
-             });
-        }
-        
-        // Chat History
-        if (chatMessages && chatMessages.length > 0) {
-             addText(t('pdf_chat_history_title'), 16, 'bold', 6);
-             chatMessages.forEach(msg => {
-                const prefix = msg.role === 'user' ? t('pdf_chat_user_prefix') : t('pdf_chat_model_prefix');
-                addText(`${prefix} ${msg.text}`, 10, (msg.role === 'user' ? 'bold' : 'normal'), 5);
-             });
-        }
-        
-        // Finalize footers on all pages
-        const totalPages = doc.getNumberOfPages();
-        for(let i = 1; i <= totalPages; i++){
-            doc.setPage(i);
-            const pageStr = `${t('pdf_page')} ${i} ${t('pdf_of')} ${totalPages}`;
-            doc.setFontSize(8).setTextColor(150);
-            if (isHindi) doc.setFont('NotoSansDevanagari');
-            doc.text(pageStr, pageWidth / 2, pageHeight - 10, { align: 'center' });
-            doc.text(`${t('pdf_footer_disclaimer_title')}: ${t('pdf_footer_disclaimer')}`, margin, pageHeight - 10);
-        }
-
-        const pdfFileName = `${(documentTitle || fileName).replace(/[^a-z0-9]/gi, '_').slice(0, 50)}_Report.pdf`;
-        doc.save(pdfFileName);
-        
-        // Save a backup copy to Google Drive
-        const base64Pdf = doc.output('datauristring').split(',')[1];
-        savePdfToDrive(base64Pdf, pdfFileName);
-        
-      } catch (error) {
-          console.error("PDF generation failed:", error);
-          const errorKey = language === 'hi' ? 'error_pdf_hindi' : 'error_pdf_generic';
-          setError({ title: t(`${errorKey}_title`), message: t(`${errorKey}_message`) });
-      }
     };
 
     const getComplexityInfo = (score: number): { text: string; color: string } => {

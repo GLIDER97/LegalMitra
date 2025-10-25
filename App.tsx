@@ -14,7 +14,7 @@ import type { TranslationKeys } from './translations';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
-import { WhyLegalMitra } from './components/HowItWorks';
+import { KeyFeatures } from './components/HowItWorks';
 import { MissionVision } from './components/Services';
 import { AnalysisReport } from './components/AnalysisReport';
 import { LanguageSwitcher } from './components/LanguageSwitcher';
@@ -31,6 +31,9 @@ import { VaniMitra } from './components/VaniMitra';
 import { VaniMitraButton } from './components/VaniMitraButton';
 import { Chat } from './components/Chat';
 import { ChatButton } from './components/ChatButton';
+import { AiLegalSupport } from './components/AiLegalSupport';
+import { HowItWorksGuide } from './components/HowItWorksGuide';
+import { AiFeatures } from './components/AiFeatures';
 
 
 // Make Tesseract.js globally available for the component
@@ -60,6 +63,8 @@ const App: React.FC = () => {
   const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const [isVaniMitraOpen, setIsVaniMitraOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isLegalSupportOpen, setIsLegalSupportOpen] = useState(false);
+  const [legalSupportChatHistory, setLegalSupportChatHistory] = useState<Message[]>([]);
   const intervalRef = useRef<number | null>(null);
   
   const loadingMessages: TranslationKeys[] = [
@@ -145,7 +150,7 @@ const App: React.FC = () => {
             setOcrStatus('Scanned pages detected. Initializing OCR...');
             
             const tesseractLangMap: Record<string, string> = {
-                en: 'eng', hi: 'hin',
+                en: 'eng', hi: 'hin', bn: 'ben', mr: 'mar', te: 'tel',
             };
             const ocrLang = tesseractLangMap[language] || 'eng';
 
@@ -321,7 +326,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-brand-dark text-brand-light">
       <ErrorPopup error={error} onDismiss={() => setError(null)} />
-      <Header />
+      <Header onOpenLegalSupport={() => setIsLegalSupportOpen(true)} />
       <main className="flex-grow">
         <Hero
           documentText={documentText}
@@ -366,7 +371,9 @@ const App: React.FC = () => {
             )}
         </div>
         
-        <WhyLegalMitra />
+        <KeyFeatures />
+        <HowItWorksGuide />
+        <AiFeatures />
         <UseCases />
         <FAQ />
         <TrustAndCredibility />
@@ -400,6 +407,12 @@ const App: React.FC = () => {
       <LanguagePrompt />
 
       {/* Modals */}
+      <AiLegalSupport
+        isOpen={isLegalSupportOpen}
+        onClose={() => setIsLegalSupportOpen(false)}
+        chatHistory={legalSupportChatHistory}
+        setChatHistory={setLegalSupportChatHistory}
+      />
        {analysisResult && Object.keys(analysisResult).length > 0 && (
         <>
             <VaniMitra 

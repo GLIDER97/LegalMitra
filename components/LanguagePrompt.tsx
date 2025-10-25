@@ -10,6 +10,9 @@ interface SupportedLangInfo {
 
 const supportedLangs: SupportedLangInfo[] = [
   { code: 'hi', name: 'हिन्दी' },
+  { code: 'bn', name: 'বাংলা' },
+  { code: 'mr', name: 'मराठी' },
+  { code: 'te', name: 'తెలుగు' },
 ];
 
 export const LanguagePrompt: React.FC = () => {

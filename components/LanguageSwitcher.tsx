@@ -20,6 +20,9 @@ export const LanguageSwitcher: React.FC = () => {
   const languages: { code: Language; name: string }[] = [
     { code: 'en', name: 'English' },
     { code: 'hi', name: 'हिन्दी' },
+    { code: 'bn', name: 'বাংলা' },
+    { code: 'mr', name: 'मराठी' },
+    { code: 'te', name: 'తెలుగు' },
   ];
 
   const handleMouseEnter = () => {

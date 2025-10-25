@@ -9,11 +9,11 @@ import {
     AcademicCapIcon,
     PaintBrushIcon,
     DocumentCheckIcon,
-    EyeSlashIcon,
+    LawBookIcon,
     ShieldExclamationIcon,
 } from './Icons';
 
-// FIX: Explicitly type UseCaseCard as React.FC to resolve issue with props spreading.
+// FIX: Explicitly typed the props for the UseCaseCard component to resolve TypeScript errors.
 const UseCaseCard: React.FC<{ icon: React.ReactNode, title: string, description: string }> = ({ icon, title, description }) => (
     <div className="bg-brand-card p-6 rounded-lg shadow-lg border border-gray-800 transition-transform transform hover:-translate-y-1 h-full">
         <div className="flex items-center justify-start gap-4">
@@ -39,7 +39,7 @@ export const UseCases: React.FC = () => {
         { icon: <AcademicCapIcon className="w-6 h-6" />, title: t('use_cases_6_title'), description: t('use_cases_6_desc') },
         { icon: <PaintBrushIcon className="w-6 h-6" />, title: t('use_cases_7_title'), description: t('use_cases_7_desc') },
         { icon: <DocumentCheckIcon className="w-6 h-6" />, title: t('use_cases_8_title'), description: t('use_cases_8_desc') },
-        { icon: <EyeSlashIcon className="w-6 h-6" />, title: t('use_cases_9_title'), description: t('use_cases_9_desc') },
+        { icon: <LawBookIcon className="w-6 h-6" />, title: t('use_cases_9_title'), description: t('use_cases_9_desc') },
         { icon: <ShieldExclamationIcon className="w-6 h-6" />, title: t('use_cases_10_title'), description: t('use_cases_10_desc') },
     ];
 

@@ -11,6 +11,9 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const languageMap: Partial<Record<Language, string>> = {
     en: 'English',
     hi: 'Hindi',
+    bn: 'Bengali',
+    mr: 'Marathi',
+    te: 'Telugu',
 };
 
 /**
@@ -243,6 +246,7 @@ Legal Risk to Analyze: "${flagText}"`;
         
         let parsedResult: Partial<GroundingInfo>;
         const textResponse = response.text.trim();
+        // FIX: The response may contain markdown backticks for JSON, which need to be removed before parsing.
         const jsonMatch = textResponse.match(/```json\s*([\s\S]*?)\s*```/);
         const jsonText = jsonMatch ? jsonMatch[1] : textResponse;
         
@@ -253,7 +257,7 @@ Legal Risk to Analyze: "${flagText}"`;
             throw new Error("The AI returned an invalid format for the real-world context. Please try again.");
         }
 
-        const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks as GroundingInfo['sources'] || [];
+        const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks.map(chunk => chunk.web) as GroundingInfo['sources'] || [];
         
         return { ...parsedResult, sources };
 

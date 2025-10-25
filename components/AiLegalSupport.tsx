@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 // FIX: The `LiveSession` type is not exported from the main package.
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
-import type { Message, AnalysisResult } from '../types';
-import { XMarkIcon, SparklesIcon, UserIcon, MicrophoneIcon } from './Icons';
+import type { Message } from '../types';
+import { XMarkIcon, SparklesIcon, UserIcon, MicrophoneIcon, LawBookIcon } from './Icons';
 
 // --- Audio Encoding/Decoding utilities as per Gemini Live API documentation ---
 
@@ -59,11 +59,9 @@ function createBlob(data: Float32Array): Blob {
 
 // --- Component ---
 
-interface VaniMitraProps {
+interface AiLegalSupportProps {
     isOpen: boolean;
     onClose: () => void;
-    documentText: string;
-    analysisResult: AnalysisResult | null;
     chatHistory: Message[];
     setChatHistory: React.Dispatch<React.SetStateAction<Message[]>>;
 }
@@ -72,7 +70,7 @@ type Status = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error';
 
 const ANALYSER_FFT_SIZE = 64; // Gives 32 data points
 
-export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentText, analysisResult, chatHistory, setChatHistory }) => {
+export const AiLegalSupport: React.FC<AiLegalSupportProps> = ({ isOpen, onClose, chatHistory, setChatHistory }) => {
     const { t } = useTranslations();
     const { language } = useLanguage();
 
@@ -148,36 +146,19 @@ export const VaniMitra: React.FC<VaniMitraProps> = ({ isOpen, onClose, documentT
             streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
         } catch (err: any) {
             console.error("Microphone access error:", err.name, err.message);
-            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') setError(t('vani_mitra_mic_error_denied'));
-            else if (err.name === 'NotFoundError') setError(t('vani_mitra_mic_error_not_found'));
-            else setError(t('vani_mitra_mic_error_generic'));
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') setError(t('ai_legal_support_mic_error_denied'));
+            else if (err.name === 'NotFoundError') setError(t('ai_legal_support_mic_error_not_found'));
+            else setError(t('ai_legal_support_mic_error_generic'));
             setStatus('error');
             return;
         }
 
         setStatus('listening');
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        const languageMap: Record<string, string> = { en: 'English', hi: 'Hindi' };
         
-        const analysisContext = analysisResult && Object.keys(analysisResult).length > 0 
-            ? `ANALYSIS REPORT:\n---\n${JSON.stringify(analysisResult, null, 2)}\n---` 
-            : '';
-
-        const systemInstruction = `You are Vani Mitra, a helpful and friendly voice AI assistant for LegalIQ.app. The user has provided a legal document and you have already performed an analysis on it. The user is now asking follow-up questions via voice.
-- Your most important rule is to match the user's language. The user's primary language is ${languageMap[language] || 'English'}. Respond in that language.
-- CRITICAL: Wait for the user to finish their thought or sentence completely before you start responding. Do not interrupt them, even if there is a short pause.
-- Keep your spoken answers short, conversational, and very easy to understand for a non-expert.
-- Base your answers STRICTLY on the content of the document AND the analysis provided below.
-- If the answer cannot be found in the provided context, state that clearly and politely.
-- Do NOT provide legal advice. Start your response by directly answering the user's question.
-- Be friendly and use a reassuring tone.
-
-DOCUMENT:
----
-${documentText}
----
-
-${analysisContext}`;
+        const systemInstruction = `You are an AI Legal Consultant from LegalIQ.app, and your name is Legal Mitra. Your goal is to provide helpful, general information about legal topics in India. Start every conversation by introducing yourself as Legal Mitra and stating your purpose. If asked what your name is, you should respond with "Legal Mitra".
+IMPORTANT: You MUST include a clear disclaimer in EVERY response that you are an AI assistant, not a lawyer, and your information is for educational purposes only and not legal advice. Tell users they should consult a qualified lawyer for any legal advice.
+The user may speak in various Indian languages, including Hinglish. You must detect their language and respond fluently in the same language. Keep responses concise and easy to understand for a non-expert.`;
 
         sessionPromiseRef.current = ai.live.connect({
             model: 'gemini-2.5-flash-native-audio-preview-09-2025',
@@ -281,7 +262,7 @@ ${analysisContext}`;
                 },
                 onerror: (e: ErrorEvent) => {
                     console.error('Live session error:', e);
-                    setError(t('vani_mitra_connection_error'));
+                    setError(t('ai_legal_support_connection_error'));
                     setStatus('error');
                     disconnect();
                 },
@@ -289,7 +270,7 @@ ${analysisContext}`;
             },
         });
 
-    }, [documentText, analysisResult, language, t, disconnect, setChatHistory]);
+    }, [t, disconnect, setChatHistory]);
     
     useEffect(() => {
         let active = true;
@@ -323,6 +304,7 @@ ${analysisContext}`;
             setLiveInput('');
             currentInputRef.current = '';
             currentOutputRef.current = '';
+            setError(null);
             connect();
         } else {
             disconnect();
@@ -332,11 +314,11 @@ ${analysisContext}`;
     }, [isOpen]);
 
     const statusInfo: Record<Status, { text: string; pulsate: boolean }> = {
-        idle: { text: t('vani_mitra_thinking'), pulsate: true },
-        listening: { text: t('vani_mitra_listening'), pulsate: false },
-        thinking: { text: t('vani_mitra_thinking'), pulsate: true },
-        speaking: { text: t('vani_mitra_speaking'), pulsate: false },
-        error: { text: error || t('vani_mitra_error'), pulsate: false },
+        idle: { text: t('ai_legal_support_thinking'), pulsate: true },
+        listening: { text: t('ai_legal_support_listening'), pulsate: false },
+        thinking: { text: t('ai_legal_support_thinking'), pulsate: true },
+        speaking: { text: t('ai_legal_support_speaking'), pulsate: false },
+        error: { text: error || t('ai_legal_support_error'), pulsate: false },
     };
 
     return (
@@ -345,8 +327,8 @@ ${analysisContext}`;
             <div className={`relative w-full h-full flex flex-col bg-brand-card shadow-2xl transition-transform duration-300 ${isOpen ? 'scale-100' : 'scale-95'}`}>
                 <header className="flex items-center justify-between p-4 border-b border-gray-700 flex-shrink-0">
                     <div className="flex items-center gap-3">
-                        <SparklesIcon className="h-6 w-6 text-brand-gold" />
-                        <h2 className="text-lg font-bold text-brand-light">Vani Mitra</h2>
+                        <LawBookIcon className="h-6 w-6 text-brand-gold" />
+                        <h2 className="text-lg font-bold text-brand-light">{t('ai_legal_support_modal_title')}</h2>
                     </div>
                     <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-gold">
                         <XMarkIcon className="h-6 w-6" />
@@ -356,7 +338,7 @@ ${analysisContext}`;
                 <main className="flex-1 flex flex-col justify-between overflow-hidden p-4 space-y-4">
                     <div className="flex-1 space-y-4 overflow-y-auto no-scrollbar pr-2">
                         <div className="p-4 bg-brand-dark/50 rounded-lg text-center">
-                            <p className="text-base text-gray-300">{t('vani_mitra_welcome')}</p>
+                            <p className="text-base text-gray-300">{t('ai_legal_support_welcome')}</p>
                         </div>
                         {chatHistory.map((msg, index) => (
                              <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>

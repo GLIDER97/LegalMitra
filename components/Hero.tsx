@@ -8,7 +8,10 @@ import {
     SearchIcon,
     ChevronUpIcon,
     ChevronDownIcon,
-    XMarkIcon
+    XMarkIcon,
+    ChatBubbleOvalLeftEllipsisIcon,
+    MicrophoneIcon,
+    ShieldSearchIcon
 } from './Icons';
 
 interface HeroProps {
