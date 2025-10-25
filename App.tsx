@@ -34,6 +34,8 @@ import { ChatButton } from './components/ChatButton';
 import { AiLegalSupport } from './components/AiLegalSupport';
 import { HowItWorksGuide } from './components/HowItWorksGuide';
 import { AiFeatures } from './components/AiFeatures';
+import { AboutUsModal } from './components/AboutUsModal';
+import { ContactModal } from './components/ContactModal';
 
 
 // Make Tesseract.js globally available for the component
@@ -65,6 +67,9 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isLegalSupportOpen, setIsLegalSupportOpen] = useState(false);
   const [legalSupportChatHistory, setLegalSupportChatHistory] = useState<Message[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAboutUsModalOpen, setIsAboutUsModalOpen] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const intervalRef = useRef<number | null>(null);
   
   const loadingMessages: TranslationKeys[] = [
@@ -326,7 +331,13 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-brand-dark text-brand-light">
       <ErrorPopup error={error} onDismiss={() => setError(null)} />
-      <Header onOpenLegalSupport={() => setIsLegalSupportOpen(true)} />
+      <Header 
+        onOpenLegalSupport={() => setIsLegalSupportOpen(true)} 
+        isMobileMenuOpen={isMobileMenuOpen}
+        toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        onOpenAboutUsModal={() => setIsAboutUsModalOpen(true)}
+        onOpenContactModal={() => setIsContactModalOpen(true)}
+      />
       <main className="flex-grow">
         <Hero
           documentText={documentText}
@@ -371,12 +382,12 @@ const App: React.FC = () => {
             )}
         </div>
         
-        <KeyFeatures />
-        <HowItWorksGuide />
-        <AiFeatures />
-        <UseCases />
-        <FAQ />
-        <TrustAndCredibility />
+        <div id="features"><KeyFeatures /></div>
+        <div id="how-to-use"><HowItWorksGuide /></div>
+        <div id="ai-legal-team"><AiFeatures /></div>
+        <div id="use-cases"><UseCases /></div>
+        <div id="faq"><FAQ /></div>
+        <div id="trust-and-security"><TrustAndCredibility /></div>
         <Testimonials />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -407,6 +418,14 @@ const App: React.FC = () => {
       <LanguagePrompt />
 
       {/* Modals */}
+      <AboutUsModal
+        isOpen={isAboutUsModalOpen}
+        onClose={() => setIsAboutUsModalOpen(false)}
+      />
+      <ContactModal
+        isOpen={isContactModalOpen}
+        onClose={() => setIsContactModalOpen(false)}
+      />
       <AiLegalSupport
         isOpen={isLegalSupportOpen}
         onClose={() => setIsLegalSupportOpen(false)}
