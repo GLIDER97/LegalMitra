@@ -388,13 +388,13 @@ const App: React.FC = () => {
         <div id="use-cases"><UseCases /></div>
         <div id="faq"><FAQ /></div>
         <div id="trust-and-security"><TrustAndCredibility /></div>
-        <Testimonials />
+        <div id="testimonials"><Testimonials /></div>
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
             <hr className="border-t border-gray-800" />
         </div>
 
-        <MissionVision />
+        <div id="mission-vision"><MissionVision /></div>
 
         {!analysisResult && !isLoading && !isParsing && <BlogContent />}
 

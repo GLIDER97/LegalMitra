@@ -14,6 +14,8 @@ const menuItems = [
     { name: 'AI Legal Team', id: 'ai-legal-team' },
     { name: 'Use Cases', id: 'use-cases' },
     { name: 'Trust & Security', id: 'trust-and-security' },
+    { name: 'Testimonials', id: 'testimonials' },
+    { name: 'Mission & Vision', id: 'mission-vision' },
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({ onLinkClick, onAboutClick, onContactClick, isMobile = false }) => {
@@ -114,11 +116,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onLinkClick, onAboutClick, onCon
                         <ChevronDownIcon className="h-4 w-4" />
                     </button>
 
-                    {isServicesOpen && (
-                        <div
-                            className="absolute top-full left-0 pt-2 w-48 focus:outline-none animate-fade-in-down"
-                        >
-                            <div className="rounded-md shadow-lg bg-brand-card ring-1 ring-black ring-opacity-5">
+                    <div
+                        className={`absolute top-full left-0 pt-2 w-48 focus:outline-none transition-opacity duration-200 ${isServicesOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                    >
+                        {isServicesOpen && (
+                            <div
+                                className="rounded-md shadow-lg bg-brand-card ring-1 ring-black ring-opacity-5 animate-fade-in-down"
+                            >
                                 <ul className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                                     {menuItems.map((item) => (
                                         <li key={item.id}>
@@ -138,8 +142,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onLinkClick, onAboutClick, onCon
                                     ))}
                                 </ul>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </li>
                  <li>
                     <button
