@@ -25,7 +25,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLegalSupport, isMobileMenu
       <header className="bg-brand-card/50 backdrop-blur-sm sticky top-0 z-50 border-b border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
+            <a href="https://legaliq.app" className="flex items-center" aria-label="LegalIQ.app homepage">
               <div className="flex-shrink-0">
                 <LegalIqLogoIcon className="h-8 w-8 text-brand-gold" />
               </div>
@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLegalSupport, isMobileMenu
                 </h1>
                 <p className="text-xs sm:text-sm text-brand-gold font-semibold tracking-wide">{t('tagline')}</p>
               </div>
-            </div>
+            </a>
             
             <div className="hidden md:flex items-center space-x-4">
               <Navbar onLinkClick={() => {}} onAboutClick={onOpenAboutUsModal} onContactClick={onOpenContactModal} />
