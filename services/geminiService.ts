@@ -74,6 +74,55 @@ async function generateContentWithSchema<T>(prompt: string, schema: any): Promis
     }
 }
 
+// --- New Function for Language Detection from Image ---
+export const detectLanguageFromImage = async (base64ImageData: string): Promise<string> => {
+    try {
+        const imagePart = {
+            inlineData: {
+                mimeType: 'image/jpeg',
+                data: base64ImageData,
+            },
+        };
+
+        const prompt = `Analyze the attached image which is a page from a document. Identify the dominant script/language of the text.
+Respond with ONLY ONE of the following Tesseract language codes:
+- 'eng' for English
+- 'hin' for Hindi (Devanagari script)
+- 'ben' for Bengali
+- 'mar' for Marathi (Devanagari script)
+- 'tel' for Telugu
+- 'tam' for Tamil
+- 'urd' for Urdu
+
+If the language is not in this list or cannot be identified, respond with 'eng' as the default. Your response must be only the three-letter code and nothing else.`;
+
+        const response: GenerateContentResponse = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: { parts: [imagePart, { text: prompt }] },
+            config: {
+                temperature: 0.0, // Set to 0 for most deterministic output
+                maxOutputTokens: 5, // The response is very short
+            },
+        });
+
+        const detectedLang = response.text.trim().toLowerCase();
+        const validLangs = ['eng', 'hin', 'ben', 'mar', 'tel', 'tam', 'urd'];
+        
+        if (validLangs.includes(detectedLang)) {
+            return detectedLang;
+        }
+        
+        console.warn(`Unexpected language code from Gemini: "${detectedLang}". Defaulting to 'eng'.`);
+        return 'eng';
+
+    } catch (error) {
+        console.error("Error during language detection, defaulting to English:", error);
+        // Instead of re-throwing, we log and return a default to allow OCR to proceed.
+        // This makes the feature more resilient if the detection call fails.
+        return 'eng';
+    }
+};
+
 
 // --- Schema and Function for Summary & Title ---
 const summarySchema = {

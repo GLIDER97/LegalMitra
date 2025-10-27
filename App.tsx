@@ -7,7 +7,8 @@ import {
     getSwot,
     getRedFlags,
     getNegotiationPoints,
-    getJargonGlossary
+    getJargonGlossary,
+    detectLanguageFromImage
 } from './services/geminiService';
 import type { AnalysisResult, SectionError, Message } from './types';
 import type { TranslationKeys } from './translations';
@@ -152,27 +153,47 @@ const App: React.FC = () => {
             });
             text = pageTextContents.join('\n\n');
           } else {
-            setOcrStatus('Scanned pages detected. Initializing OCR...');
+            // New logic: Auto-detect language then OCR
+            setOcrStatus('Scanned pages detected. Detecting document language...');
             
-            const tesseractLangMap: Record<string, string> = {
-                en: 'eng', hi: 'hin', bn: 'ben', mr: 'mar', te: 'tel',
-            };
-            const ocrLang = tesseractLangMap[language] || 'eng';
-
-            const worker = await Tesseract.createWorker(ocrLang);
-            await worker.setParameters({
-              // Set Page Segmentation Mode to '4' (Assume a single column of text of variable sizes).
-              // This can significantly improve accuracy for scanned documents like contracts,
-              // which typically have a single-column layout. The default '3' (auto) can sometimes
-              // misinterpret the layout.
-              tessedit_pageseg_mode: '4',
-              // Preserve interword spaces to better maintain the original document structure.
-              preserve_interword_spaces: '1',
-            });
+            // 1. Render first scanned page to canvas to get image data for detection
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
             if (!context) throw new Error('Could not get canvas context for OCR');
+            
+            const firstScannedPageNum = pagesToOcr[0];
+            const detectionPage = await pdf.getPage(firstScannedPageNum);
+            // Using a moderate scale for detection to balance speed and accuracy
+            const detectionViewport = detectionPage.getViewport({ scale: 1.5 });
+            canvas.height = detectionViewport.height;
+            canvas.width = detectionViewport.width;
+            await detectionPage.render({ canvasContext: context, viewport: detectionViewport }).promise;
+            
+            const imageDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const base64ImageData = imageDataUrl.split(',')[1];
 
+            // 2. Call Gemini to detect language
+            const detectedLang = await detectLanguageFromImage(base64ImageData);
+
+            const langNameMap: Record<string, string> = {
+                eng: 'English', hin: 'Hindi', ben: 'Bengali', mar: 'Marathi', tel: 'Telugu', tam: 'Tamil', urd: 'Urdu',
+            };
+            const detectedLangName = langNameMap[detectedLang] || 'English';
+            setOcrStatus(`Language detected: ${detectedLangName}. Initializing OCR...`);
+
+            // 3. Initialize Tesseract with the detected language and local data path
+            // This assumes .traineddata files are placed in a /tessdata/ directory in the public folder.
+            const worker = await Tesseract.createWorker(detectedLang, 1, {
+                langPath: '/tessdata',
+                gzip: false, // Set to false if you are using uncompressed .traineddata files
+            });
+
+            await worker.setParameters({
+              tessedit_pageseg_mode: '4',
+              preserve_interword_spaces: '1',
+            });
+
+            // 4. Perform OCR on all scanned pages
             for (const pageNum of pagesToOcr) {
                 setOcrStatus(`Performing OCR on page ${pageNum} of ${pdf.numPages}...`);
                 const page = await pdf.getPage(pageNum);
@@ -216,7 +237,7 @@ const App: React.FC = () => {
       setIsParsing(false);
       setOcrStatus('');
     }
-  }, [t, language]);
+  }, [t]);
 
 
   const handleAnalyze = useCallback(async (retrySection?: keyof AnalysisResult) => {
