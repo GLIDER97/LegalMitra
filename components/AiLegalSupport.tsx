@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
 import type { Message } from '../types';
+import type { Language } from '../translations';
 import { XMarkIcon, SparklesIcon, UserIcon, MicrophoneIcon, LawBookIcon } from './Icons';
 
 // --- Audio Encoding/Decoding utilities as per Gemini Live API documentation ---
@@ -156,9 +157,21 @@ export const AiLegalSupport: React.FC<AiLegalSupportProps> = ({ isOpen, onClose,
         setStatus('listening');
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         
-        const systemInstruction = `You are an AI Legal Consultant from LegalIQ.app, and your name is Legal Mitra. Your goal is to provide helpful, general information about legal topics in India. Start every conversation by introducing yourself as Legal Mitra and stating your purpose. If asked what your name is, you should respond with "Legal Mitra".
-IMPORTANT: You MUST include a clear disclaimer in EVERY response that you are an AI assistant, not a lawyer, and your information is for educational purposes only and not legal advice. Tell users they should consult a qualified lawyer for any legal advice.
-The user may speak in various Indian languages, including Hinglish. You must detect their language and respond fluently in the same language. Keep responses concise and easy to understand for a non-expert.`;
+        const languageMap: Partial<Record<Language, string>> = {
+            en: 'English',
+            hi: 'Hindi',
+            bn: 'Bengali',
+            mr: 'Marathi',
+            te: 'Telugu',
+        };
+        const targetLanguage = languageMap[language] || 'English';
+
+        const systemInstruction = `You are an AI Legal Consultant from LegalIQ.app, and your name is Legal Mitra. Your goal is to provide helpful, general information about legal topics in India.
+- In your VERY FIRST response of the conversation ONLY, you MUST introduce yourself as "Legal Mitra" and include this exact disclaimer: "Disclaimer: I am an AI assistant, not a lawyer. This information is for educational purposes only. Please consult a qualified lawyer for legal advice."
+- For all subsequent responses, DO NOT repeat the introduction or the disclaimer. Just answer the user's question directly.
+- Your primary rule is to respond in the same language the user speaks. The user's preferred language is ${targetLanguage}, so prioritize it, but always match the user's spoken language.
+- Keep responses concise and easy for a non-expert to understand.
+- Do not provide legal advice.`;
 
         sessionPromiseRef.current = ai.live.connect({
             model: 'gemini-2.5-flash-native-audio-preview-09-2025',
@@ -270,7 +283,7 @@ The user may speak in various Indian languages, including Hinglish. You must det
             },
         });
 
-    }, [t, disconnect, setChatHistory]);
+    }, [t, disconnect, setChatHistory, language]);
     
     useEffect(() => {
         let active = true;
