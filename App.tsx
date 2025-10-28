@@ -353,7 +353,10 @@ const App: React.FC = () => {
     <div className="min-h-screen flex flex-col bg-brand-dark text-brand-light">
       <ErrorPopup error={error} onDismiss={() => setError(null)} />
       <Header 
-        onOpenLegalSupport={() => setIsLegalSupportOpen(true)} 
+        onOpenLegalSupport={() => {
+          setLegalSupportChatHistory([]);
+          setIsLegalSupportOpen(true);
+        }} 
         isMobileMenuOpen={isMobileMenuOpen}
         toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         onOpenAboutUsModal={() => setIsAboutUsModalOpen(true)}

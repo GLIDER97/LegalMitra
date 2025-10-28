@@ -267,6 +267,43 @@ export const getJargonGlossary = (analysisText: string, language: Language) => {
     return generateContentWithSchema<{ jargonGlossary: JargonTerm[] }>(prompt, jargonGlossarySchema);
 };
 
+// --- Function for AI Legal Support Chat ---
+export const getLegalSupportChatResponse = async (history: Message[], newMessage: string, language: Language): Promise<string> => {
+    try {
+        const targetLanguage = languageMap[language] || 'English';
+        const formattedHistory = history.map(msg => ({
+            role: msg.role,
+            parts: [{ text: msg.text }]
+        }));
+
+        const chatHistoryForApi = formattedHistory.slice(0, -1);
+        
+        const isFirstModelMessage = !chatHistoryForApi.some(m => m.role === 'model');
+
+        const systemInstruction = `You are an AI Legal Consultant from LegalIQ.app, and your name is Legal Mitra. Your goal is to provide helpful, general information about legal topics in India.
+${isFirstModelMessage ? `- In your VERY FIRST response of the conversation ONLY, you MUST introduce yourself as "Legal Mitra" and include this exact disclaimer: "Disclaimer: I am an AI assistant, not a lawyer. This information is for educational purposes only. Please consult a qualified lawyer for legal advice."` : `- For all subsequent responses, DO NOT repeat the introduction or the disclaimer. Just answer the user's question directly.`}
+- Your primary rule is to respond in the same language the user speaks. The user's preferred language is ${targetLanguage}, so prioritize it, but always match the user's spoken language.
+- Keep responses concise and easy for a non-expert to understand.
+- Do not provide legal advice.`;
+
+        const chat: Chat = ai.chats.create({
+            model: 'gemini-2.5-flash',
+            history: chatHistoryForApi,
+            config: {
+                systemInstruction: systemInstruction,
+                temperature: 0.3,
+            },
+        });
+
+        const response: GenerateContentResponse = await chat.sendMessage({ message: newMessage });
+        
+        return response.text;
+
+    } catch (error) {
+        handleGeminiError(error);
+    }
+};
+
 // --- Function for Real-World Grounding ---
 export const getRealWorldGrounding = async (flagText: string, language: Language): Promise<GroundingInfo> => {
     const targetLanguage = languageMap[language] || 'English';

@@ -4,7 +4,8 @@ import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
 import type { Message } from '../types';
 import type { Language } from '../translations';
-import { XMarkIcon, SparklesIcon, UserIcon, MicrophoneIcon, LawBookIcon } from './Icons';
+import { getLegalSupportChatResponse } from '../services/geminiService';
+import { XMarkIcon, SparklesIcon, UserIcon, MicrophoneIcon, LawBookIcon, ChatBubbleOvalLeftEllipsisIcon, PaperAirplaneIcon, SpinnerIcon } from './Icons';
 
 // --- Audio Encoding/Decoding utilities as per Gemini Live API documentation ---
 
@@ -68,6 +69,7 @@ interface AiLegalSupportProps {
 }
 
 type Status = 'idle' | 'listening' | 'thinking' | 'speaking' | 'error';
+type ChatMode = 'voice' | 'text';
 
 const ANALYSER_FFT_SIZE = 64; // Gives 32 data points
 
@@ -79,6 +81,9 @@ export const AiLegalSupport: React.FC<AiLegalSupportProps> = ({ isOpen, onClose,
     const [error, setError] = useState<string | null>(null);
     const [analyserData, setAnalyserData] = useState(() => new Uint8Array(ANALYSER_FFT_SIZE / 2));
     const [liveInput, setLiveInput] = useState('');
+    const [chatMode, setChatMode] = useState<ChatMode>('voice');
+    const [userInput, setUserInput] = useState('');
+    const [isTextThinking, setIsTextThinking] = useState(false);
 
     // FIX: Replaced non-exported type `LiveSession` with `any`.
     const sessionPromiseRef = useRef<Promise<any> | null>(null);
@@ -90,6 +95,7 @@ export const AiLegalSupport: React.FC<AiLegalSupportProps> = ({ isOpen, onClose,
     const inputAnalyserRef = useRef<AnalyserNode | null>(null);
     const outputAnalyserRef = useRef<AnalyserNode | null>(null);
     const animationFrameRef = useRef<number | null>(null);
+    const inputRef = useRef<HTMLInputElement | null>(null);
 
     const outputSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
     const nextStartTimeRef = useRef<number>(0);
@@ -284,6 +290,28 @@ export const AiLegalSupport: React.FC<AiLegalSupportProps> = ({ isOpen, onClose,
         });
 
     }, [t, disconnect, setChatHistory, language]);
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const trimmedInput = userInput.trim();
+        if (!trimmedInput || isTextThinking) return;
+
+        const newHistory: Message[] = [...chatHistory, { role: 'user', text: trimmedInput }];
+        setChatHistory(newHistory);
+        setUserInput('');
+        setIsTextThinking(true);
+
+        try {
+            const modelResponse = await getLegalSupportChatResponse(newHistory, trimmedInput, language);
+            setChatHistory(prev => [...prev, { role: 'model', text: modelResponse }]);
+        } catch (error) {
+            console.error("Chat error:", error);
+            const errorMessage = (error as Error).message || "Sorry, I couldn't get a response. Please try again.";
+            setChatHistory(prev => [...prev, { role: 'model', text: `Error: ${errorMessage}` }]);
+        } finally {
+            setIsTextThinking(false);
+        }
+    };
     
     useEffect(() => {
         let active = true;
@@ -298,7 +326,7 @@ export const AiLegalSupport: React.FC<AiLegalSupportProps> = ({ isOpen, onClose,
             animationFrameRef.current = requestAnimationFrame(draw);
         };
 
-        if (status === 'listening' || status === 'speaking') {
+        if (chatMode === 'voice' && (status === 'listening' || status === 'speaking')) {
             draw();
         } else {
             setAnalyserData(new Uint8Array(ANALYSER_FFT_SIZE / 2));
@@ -308,23 +336,36 @@ export const AiLegalSupport: React.FC<AiLegalSupportProps> = ({ isOpen, onClose,
             active = false;
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
         };
-    }, [status]);
+    }, [status, chatMode]);
 
     useEffect(() => {
         if (isOpen) {
-            // Reset state for new session
-            setChatHistory([]);
+            setChatMode('voice');
             setLiveInput('');
             currentInputRef.current = '';
             currentOutputRef.current = '';
             setError(null);
-            connect();
+        }
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (isOpen) {
+            if (chatMode === 'voice') {
+                connect();
+            } else {
+                disconnect();
+            }
         } else {
             disconnect();
         }
         return () => disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen]);
+    }, [isOpen, chatMode, connect, disconnect]);
+
+    useEffect(() => {
+        if (isOpen && chatMode === 'text' && !isTextThinking) {
+            setTimeout(() => inputRef.current?.focus(), 100);
+        }
+    }, [isOpen, chatMode, isTextThinking]);
 
     const statusInfo: Record<Status, { text: string; pulsate: boolean }> = {
         idle: { text: t('ai_legal_support_thinking'), pulsate: true },
@@ -348,64 +389,116 @@ export const AiLegalSupport: React.FC<AiLegalSupportProps> = ({ isOpen, onClose,
                     </button>
                 </header>
                 
-                <main className="flex-1 flex flex-col justify-between overflow-hidden p-4 space-y-4">
-                    <div className="flex-1 space-y-4 overflow-y-auto no-scrollbar pr-2">
-                        <div className="p-4 bg-brand-dark/50 rounded-lg text-center">
-                            <p className="text-base text-gray-300">{t('ai_legal_support_welcome')}</p>
-                        </div>
-                        {chatHistory.map((msg, index) => (
-                             <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-                                {msg.role === 'model' && (
-                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center"><SparklesIcon className="w-5 h-5 text-brand-gold" /></div>
-                                )}
-                                <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'user' ? 'bg-brand-gold text-brand-dark rounded-br-none' : 'bg-gray-700 text-brand-light rounded-bl-none'}`}>
-                                    <p className="text-base whitespace-pre-wrap">{msg.text}</p>
-                                </div>
-                                {msg.role === 'user' && (
-                                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center"><UserIcon className="w-5 h-5 text-gray-400" /></div>
-                                )}
+                <main className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
+                    <div className="p-4 bg-brand-dark/50 rounded-lg text-center">
+                        <p className="text-base text-gray-300">{t('ai_legal_support_welcome')}</p>
+                    </div>
+                    {chatHistory.map((msg, index) => (
+                         <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+                            {msg.role === 'model' && (
+                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center"><SparklesIcon className="w-5 h-5 text-brand-gold" /></div>
+                            )}
+                            <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'user' ? 'bg-brand-gold text-brand-dark rounded-br-none' : 'bg-gray-700 text-brand-light rounded-bl-none'}`}>
+                                <p className="text-base whitespace-pre-wrap">{msg.text}</p>
                             </div>
-                        ))}
-                         {liveInput && (
-                            <div className="flex items-start gap-3 justify-end animate-fade-in">
-                                <div className="max-w-[80%] rounded-2xl px-4 py-2 bg-brand-gold/50 text-brand-light italic rounded-br-none">
-                                    <p className="text-base whitespace-pre-wrap">{liveInput}</p>
+                            {msg.role === 'user' && (
+                                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center"><UserIcon className="w-5 h-5 text-gray-400" /></div>
+                            )}
+                        </div>
+                    ))}
+                     {liveInput && (
+                        <div className="flex items-start gap-3 justify-end animate-fade-in">
+                            <div className="max-w-[80%] rounded-2xl px-4 py-2 bg-brand-gold/50 text-brand-light italic rounded-br-none">
+                                <p className="text-base whitespace-pre-wrap">{liveInput}</p>
+                            </div>
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center"><UserIcon className="w-5 h-5 text-gray-400" /></div>
+                        </div>
+                    )}
+                     {isTextThinking && (
+                        <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-brand-gold/10 flex items-center justify-center"><SparklesIcon className="w-5 h-5 text-brand-gold" /></div>
+                            <div className="max-w-[80%] rounded-2xl px-4 py-2 bg-gray-700 text-brand-light rounded-bl-none flex items-center">
+                                <div className="w-2 h-2 rounded-full animate-pulse bg-brand-gold"></div>
+                                <div className="w-2 h-2 rounded-full animate-pulse bg-brand-gold [animation-delay:0.2s] mx-1"></div>
+                                <div className="w-2 h-2 rounded-full animate-pulse bg-brand-gold [animation-delay:0.4s]"></div>
+                            </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                </main>
+
+                <footer className="p-4 border-t border-gray-700 flex-shrink-0">
+                    <div className="flex flex-col items-center">
+                        {chatMode === 'text' ? (
+                             <form onSubmit={handleSendMessage} className="w-full flex items-center gap-3">
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={userInput}
+                                    onChange={(e) => setUserInput(e.target.value)}
+                                    placeholder={isTextThinking ? t('chat_thinking') : t('chat_input_placeholder')}
+                                    disabled={isTextThinking}
+                                    className="flex-1 block w-full rounded-md border-0 bg-gray-800 py-2.5 pl-4 pr-10 text-brand-light placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-brand-gold sm:text-sm sm:leading-6"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={!userInput.trim() || isTextThinking}
+                                    className="p-2.5 rounded-full text-brand-dark bg-brand-gold hover:bg-yellow-300 disabled:bg-gray-600 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-brand-gold"
+                                    aria-label="Send message"
+                                >
+                                    {isTextThinking ? <SpinnerIcon className="h-5 w-5 animate-spin" /> : <PaperAirplaneIcon className="h-5 w-5" />}
+                                </button>
+                            </form>
+                        ) : (
+                           <div className="flex-shrink-0 flex flex-col items-center justify-center text-center space-y-4">
+                                <div className={`relative flex items-center justify-center w-28 h-28 rounded-full transition-colors ${status === 'error' ? 'bg-red-500/20' : 'bg-brand-gold/10'}`}>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        {Array.from({ length: analyserData.length }).map((_, i) => {
+                                            const value = analyserData[i] || 0;
+                                            const barHeight = Math.max(2, (value / 255) * 110);
+                                            const angle = (i / (analyserData.length || 1)) * 360;
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="absolute w-1 bg-brand-gold/50 rounded-full origin-bottom"
+                                                    style={{
+                                                        height: `${barHeight}px`,
+                                                        transform: `rotate(${angle}deg) translateY(-60px)`,
+                                                        transition: 'height 0.05s ease-out'
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+
+                                    {statusInfo[status].pulsate && <div className={`absolute inset-0 rounded-full animate-pulse ${status === 'error' ? 'bg-red-500/30' : 'bg-brand-gold/20'}`}></div>}
+                                    <div className="relative w-24 h-24 rounded-full bg-brand-card flex items-center justify-center">
+                                        <MicrophoneIcon className={`w-10 h-10 ${status === 'error' ? 'text-red-400' : 'text-brand-gold'}`} />
+                                    </div>
                                 </div>
-                                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center"><UserIcon className="w-5 h-5 text-gray-400" /></div>
+                                <p className={`text-lg font-semibold min-h-[28px] ${status === 'error' ? 'text-red-300' : 'text-gray-300'}`}>{statusInfo[status].text}</p>
                             </div>
                         )}
-                        <div ref={messagesEndRef} />
-                    </div>
-                    <div className="flex-shrink-0 flex flex-col items-center justify-center text-center p-6 space-y-4">
-                        <div className={`relative flex items-center justify-center w-28 h-28 rounded-full transition-colors ${status === 'error' ? 'bg-red-500/20' : 'bg-brand-gold/10'}`}>
-                            
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                {Array.from({ length: analyserData.length }).map((_, i) => {
-                                    const value = analyserData[i] || 0;
-                                    const barHeight = Math.max(2, (value / 255) * 110);
-                                    const angle = (i / (analyserData.length || 1)) * 360;
-                                    return (
-                                        <div
-                                            key={i}
-                                            className="absolute w-1 bg-brand-gold/50 rounded-full origin-bottom"
-                                            style={{
-                                                height: `${barHeight}px`,
-                                                transform: `rotate(${angle}deg) translateY(-60px)`,
-                                                transition: 'height 0.05s ease-out'
-                                            }}
-                                        />
-                                    );
-                                })}
-                            </div>
-
-                            {statusInfo[status].pulsate && <div className={`absolute inset-0 rounded-full animate-pulse ${status === 'error' ? 'bg-red-500/30' : 'bg-brand-gold/20'}`}></div>}
-                            <div className="relative w-24 h-24 rounded-full bg-brand-card flex items-center justify-center">
-                                <MicrophoneIcon className={`w-10 h-10 ${status === 'error' ? 'text-red-400' : 'text-brand-gold'}`} />
-                            </div>
+                        <div className="flex justify-center items-center gap-2 mt-4 p-1 bg-brand-dark/50 rounded-full">
+                            <button
+                                onClick={() => setChatMode('voice')}
+                                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${chatMode === 'voice' ? 'bg-brand-gold text-brand-dark shadow-md' : 'bg-transparent text-gray-300 hover:bg-gray-700'}`}
+                                aria-pressed={chatMode === 'voice'}
+                            >
+                                <MicrophoneIcon className="h-5 w-5" />
+                                <span>Voice</span>
+                            </button>
+                            <button
+                                onClick={() => setChatMode('text')}
+                                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors ${chatMode === 'text' ? 'bg-brand-gold text-brand-dark shadow-md' : 'bg-transparent text-gray-300 hover:bg-gray-700'}`}
+                                aria-pressed={chatMode === 'text'}
+                            >
+                                <ChatBubbleOvalLeftEllipsisIcon className="h-5 w-5" />
+                                <span>Chat</span>
+                            </button>
                         </div>
-                        <p className={`text-lg font-semibold min-h-[28px] ${status === 'error' ? 'text-red-300' : 'text-gray-300'}`}>{statusInfo[status].text}</p>
                     </div>
-                </main>
+                </footer>
             </div>
         </div>
     );
