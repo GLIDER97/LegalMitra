@@ -8,7 +8,8 @@ import {
     LightbulbIcon, 
     BoltIcon 
 } from './Icons';
-import type { TranslationKeys } from '../translations';
+// FIX: Corrected import path for translations module.
+import type { TranslationKeys } from '../translations/index';
 
 interface FeatureCardProps {
     icon: React.ReactNode;

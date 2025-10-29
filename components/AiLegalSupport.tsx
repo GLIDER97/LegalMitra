@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
 import type { Message } from '../types';
-import type { Language } from '../translations';
+// FIX: Corrected import path for translations module.
+import type { Language } from '../translations/index';
 import { getLegalSupportChatResponse } from '../services/geminiService';
 import { XMarkIcon, SparklesIcon, UserIcon, MicrophoneIcon, LawBookIcon, ChatBubbleOvalLeftEllipsisIcon, PaperAirplaneIcon, SpinnerIcon } from './Icons';
 

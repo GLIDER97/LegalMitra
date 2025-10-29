@@ -2,7 +2,8 @@ import React from 'react';
 import { jsPDF } from 'jspdf';
 import type { AnalysisResult, JargonTerm, SectionError, Message, RedFlag, GroundingInfo } from '../types';
 // FIX: Import `TranslationKeys` which is now properly exported.
-import type { TranslationKeys } from '../translations';
+// FIX: Corrected import path for translations module.
+import type { TranslationKeys } from '../translations/index';
 import { generateSpeech, getRealWorldGrounding } from '../services/geminiService';
 import { 
     DownloadIcon, 

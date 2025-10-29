@@ -11,7 +11,8 @@ import {
     detectLanguageFromImage
 } from './services/geminiService';
 import type { AnalysisResult, SectionError, Message } from './types';
-import type { TranslationKeys } from './translations';
+// FIX: Corrected import path for translations module.
+import type { TranslationKeys } from './translations/index';
 import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
@@ -37,6 +38,7 @@ import { HowItWorksGuide } from './components/HowItWorksGuide';
 import { AiFeatures } from './components/AiFeatures';
 import { AboutUsModal } from './components/AboutUsModal';
 import { ContactModal } from './components/ContactModal';
+import { LoginSlider } from './components/LoginSlider';
 
 
 // Make Tesseract.js globally available for the component
@@ -71,6 +73,7 @@ const App: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAboutUsModalOpen, setIsAboutUsModalOpen] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isLoginSliderOpen, setIsLoginSliderOpen] = useState(false);
   const intervalRef = useRef<number | null>(null);
   
   const loadingMessages: TranslationKeys[] = [
@@ -361,6 +364,7 @@ const App: React.FC = () => {
         toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         onOpenAboutUsModal={() => setIsAboutUsModalOpen(true)}
         onOpenContactModal={() => setIsContactModalOpen(true)}
+        onOpenLoginSlider={() => setIsLoginSliderOpen(true)}
       />
       <main className="flex-grow">
         <Hero
@@ -449,6 +453,10 @@ const App: React.FC = () => {
       <ContactModal
         isOpen={isContactModalOpen}
         onClose={() => setIsContactModalOpen(false)}
+      />
+       <LoginSlider
+        isOpen={isLoginSliderOpen}
+        onClose={() => setIsLoginSliderOpen(false)}
       />
       <AiLegalSupport
         isOpen={isLegalSupportOpen}

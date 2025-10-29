@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type, Modality, GenerateContentResponse, Chat } from "@google/genai";
 import type { AnalysisResult, SwotAnalysis, RedFlag, NegotiationPoint, JargonTerm, Message, GroundingInfo } from '../types';
-import type { Language } from '../translations';
+// FIX: Corrected import path for translations module.
+import type { Language } from '../translations/index';
 
 if (!process.env.API_KEY) {
     throw new Error("API_KEY environment variable not set");

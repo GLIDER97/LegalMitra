@@ -9,9 +9,10 @@ interface HeaderProps {
     toggleMobileMenu: () => void;
     onOpenAboutUsModal: () => void;
     onOpenContactModal: () => void;
+    onOpenLoginSlider: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenLegalSupport, isMobileMenuOpen, toggleMobileMenu, onOpenAboutUsModal, onOpenContactModal }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenLegalSupport, isMobileMenuOpen, toggleMobileMenu, onOpenAboutUsModal, onOpenContactModal, onOpenLoginSlider }) => {
   const { t } = useTranslations();
 
   const closeMenu = () => {
@@ -46,15 +47,27 @@ export const Header: React.FC<HeaderProps> = ({ onOpenLegalSupport, isMobileMenu
                   <SparklesIcon className="h-5 w-5" />
                   <span className="hidden sm:inline">{t('ai_legal_support_button_label')}</span>
               </button>
+               <button
+                onClick={onOpenLoginSlider}
+                className="inline-flex items-center gap-2 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-brand-dark bg-brand-gold hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-brand-card focus:ring-brand-gold transition-all"
+              >
+                {t('login_button')}
+              </button>
             </div>
 
             <div className="md:hidden flex items-center">
                <button
                   onClick={onOpenLegalSupport}
-                  className="inline-flex items-center gap-2 px-3 py-2 border border-brand-gold/80 text-sm font-medium rounded-md shadow-sm text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20 mr-2"
+                  className="inline-flex items-center justify-center p-2 rounded-md text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20 mr-2"
+                  aria-label={t('ai_legal_support_button_label')}
               >
                   <SparklesIcon className="h-5 w-5" />
-                  <span className="text-xs">{t('ai_legal_support_button_label')}</span>
+              </button>
+              <button
+                onClick={onOpenLoginSlider}
+                className="inline-flex items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md shadow-sm text-brand-dark bg-brand-gold hover:bg-yellow-300 mr-2"
+              >
+                {t('login_button')}
               </button>
               <button onClick={toggleMobileMenu} className="inline-flex items-center justify-center p-2 rounded-md text-brand-gold hover:bg-brand-gold/20 focus:outline-none">
                 <span className="sr-only">Open main menu</span>

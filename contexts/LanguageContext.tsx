@@ -1,6 +1,6 @@
 import React, { createContext, useState, useMemo, ReactNode } from 'react';
-// FIX: Import `translations` and `TranslationKeys` which are now properly exported.
-import { translations, Language, TranslationKeys } from '../translations';
+// FIX: Corrected import path for translations module.
+import { translations, Language, TranslationKeys } from '../translations/index';
 
 interface LanguageContextType {
   language: Language;

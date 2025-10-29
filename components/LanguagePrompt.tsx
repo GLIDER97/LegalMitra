@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage, useTranslations } from '../hooks/useTranslations';
-import type { Language } from '../translations';
+// FIX: Corrected import path for translations module.
+import type { Language } from '../translations/index';
 import { TranslateIcon } from './Icons';
 
 interface SupportedLangInfo {

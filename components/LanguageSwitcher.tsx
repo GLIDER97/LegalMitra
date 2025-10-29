@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../hooks/useTranslations';
 import { TranslateIcon } from './Icons';
-import { Language } from '../translations';
+// FIX: Corrected import path for translations module.
+import { Language } from '../translations/index';
 
 export const LanguageSwitcher: React.FC = () => {
   const { language, setLanguage } = useLanguage();
